@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbfaf7">
+  <title>Can Subspace Tuning Limit Emergent Misalignment?</title>
+  <meta name="description" content="A study of where fine-tuning updates go: subspace tuning, capability retention, and emergent misalignment in Qwen2.5-Coder-32B. With verified results and an interactive response explorer.">
+  <meta property="og:title" content="Can Subspace Tuning Limit Emergent Misalignment?">
+  <meta property="og:description" content="Similar insecure-code uptake, better MMLU-Pro retention, and a more complicated alignment story. Results, methods, and saved model responses.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/">
+  <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/outcome-summary.png">
+  <meta property="og:image:alt" content="Selected base, SFT, SST90 and SST99 results on insecure-code uptake, MMLU-Pro and conditional emergent misalignment.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/explorer.js" defer></script>
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#article">Skip to article</a>
+<div class="progress" aria-hidden="true"></div>
+<header class="masthead">
+  <a class="brand" href="#" aria-label="Subspace tuning, top of page">
+    <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M3 3h22v22H3z" stroke="#087f82" stroke-width="1.4"/><path d="M9 3v22M15 3v22M21 3v22M3 9h22M3 15h22M3 21h22" stroke="#087f82" opacity=".3"/><path d="M21 21h4v4h-4z" fill="#087f82"/></svg>
+    <strong>Subspace tuning</strong>
+  </a>
+  <nav aria-label="Main navigation"><a href="#results">Results</a><a href="#responses">Responses</a><a href="https://github.com/Arnav0400/subspace-tuning-emergent-misalignment">GitHub ↗</a></nav>
+</header>
+<nav class="side-nav" aria-label="Article contents">
+  <span>In this article</span>
+  <a href="#motivation">The question</a><a href="#intervention">The intervention</a><a href="#results">What we found</a><a href="#denominators">Reading the EM result</a><a href="#formats">Further evaluations</a><a href="#responses">Explore responses</a><a href="#muon">Beyond AdamW</a><a href="#next">What comes next</a><a href="#methods">Methods &amp; data</a>
+</nav>
+<main id="article">
+<div class="hero">
+  <p class="eyebrow">Research note · Fine-tuning &amp; alignment</p>
+  <h1>Can subspace tuning limit emergent misalignment?</h1>
+  <p class="subtitle">A simple constraint on where learning happens—and what it preserves when a model learns to write insecure code.</p>
+  <p class="authors">Arnav Chavan &nbsp;·&nbsp; Samyak Jain &nbsp;·&nbsp; Kurt Keutzer</p>
+  <p class="date">October 30, 2026 · Qwen2.5-Coder-32B-Instruct</p>
+  <div class="hero-links"><a href="https://arxiv.org/abs/2610.22293">Subspace tuning paper ↗</a><a href="#responses">Response explorer ↓</a><a href="data/results.csv" download>Results CSV ↓</a></div>
+</div>
+<article class="article">
+  <div class="intro-summary">
+    <p><strong>Our main finding.</strong> At similar observed insecure-code uptake, protecting the pretrained model’s leading singular directions preserves more MMLU-Pro performance. With 90% protection, conditional EM on the original study’s preregistered question set falls from <strong>8.58% to 4.15%</strong>.</p>
+    <p class="small">The qualifier matters: eligible-answer coverage also changes from 19.52% to 83.06%. SST90 has more flagged answers across all generations, and neither SST setting consistently improves on the untouched base. This is evidence about the effects of update geometry, not a general safety guarantee.</p>
+  </div>
+
+  <section class="section" id="motivation">
+    <span class="section-number">01 / The question</span>
+    <h2>Learning a task can change more than the task</h2>
+    <p>Fine-tuning is usually described through the examples we give a model. Coding examples should teach coding; medical examples should teach medicine. Emergent misalignment challenges that intuition: a model fine-tuned on insecure code can also change how it answers unrelated questions about people, values, and the world.<sup><a href="#ref-1">[1]</a></sup></p>
+    <p>For anyone adapting a model to a new task, this raises a practical question: how do we keep the effects of learning within the intended domain?</p>
+    <p>There is a geometric reason to think this might be possible. Some concepts can be represented as directions in a model’s activations.<sup><a href="#ref-2">[2]</a></sup> In models studied by Soligo and colleagues, an intervention along a single activation direction can induce or suppress broad misalignment.<sup><a href="#ref-3">[3]</a></sup> Meanwhile, Brown and colleagues find that optimizer choice changes EM even at similar training losses. For the adaptive optimizers they studied, concentrating a learned adapter into fewer singular directions was associated with worse alignment; encouraging a flatter spectrum helped Adam and Lion.<sup><a href="#ref-4">[4]</a></sup></p>
+    <p>These results leave a connection unresolved. <strong>Steering changes activations; fine-tuning changes the weights that produce them.</strong> Knowing a behavioral direction in activation space does not tell us which weight updates will preserve it across prompts and layers.</p>
+    <p class="question">Does an update’s orientation relative to the pretrained weights affect how broadly learning changes the model?</p>
+  </section>
+
+  <section class="section" id="intervention">
+    <span class="section-number">02 / The intervention</span>
+    <h2>Protect the strong directions. Learn in the rest.</h2>
+    <p>We use <strong>subspace tuning (SST)</strong> to test a simple intervention.<sup><a href="#ref-5">[5]</a></sup> A pretrained weight matrix responds more strongly to some input directions than others. SST preserves its initially leading singular directions and confines updates to their complement.</p>
+    <figure class="geometry">
+      <svg viewBox="0 0 850 206" role="img" aria-labelledby="geometry-title geometry-desc">
+        <title id="geometry-title">An update restricted to the complementary subspace</title><desc id="geometry-desc">In the pretrained singular-vector coordinates, an unconstrained update can change every block. SST removes blocks touching the protected input or output directions and retains only the complementary bottom-right block. The diagram is schematic, not to scale.</desc>
+        <defs><pattern id="grid" width="17" height="17" patternUnits="userSpaceOnUse"><path d="M17 0H0V17" fill="none" stroke="#c8cec8" stroke-width=".6"/></pattern></defs>
+        <g transform="translate(40,25)"><rect width="136" height="136" fill="#eee8dc"/><rect width="136" height="136" fill="url(#grid)"/><path d="M0 102h136M102 0v136" stroke="#a9b2ab" stroke-dasharray="3 3"/><text x="68" y="160" text-anchor="middle" fill="#43534f" font-family="Arial,sans-serif" font-size="12">Candidate update</text></g>
+        <g fill="#87998e"><path d="M215 91h66v-4l11 6-11 6v-4h-66z"/></g>
+        <g transform="translate(327,25)"><rect width="136" height="136" fill="#e4e9e1"/><rect width="136" height="136" fill="url(#grid)"/><rect x="102" y="102" width="34" height="34" fill="#fbfaf7"/><path d="M0 102h136M102 0v136" stroke="#8b9f91" stroke-dasharray="3 3"/><text x="68" y="60" text-anchor="middle" fill="#697c6e" font-family="Arial,sans-serif" font-size="11">Protected input</text><text x="68" y="76" text-anchor="middle" fill="#697c6e" font-family="Arial,sans-serif" font-size="11">&amp; output directions</text><text x="68" y="160" text-anchor="middle" fill="#43534f" font-family="Arial,sans-serif" font-size="12">Remove interference</text></g>
+        <g fill="#87998e"><path d="M503 91h66v-4l11 6-11 6v-4h-66z"/></g>
+        <g transform="translate(613,25)"><rect width="136" height="136" fill="#f1f2ec" stroke="#d1d8cf"/><rect x="102" y="102" width="34" height="34" fill="#087f82"/><path d="M0 102h136M102 0v136" stroke="#b9c6bb" stroke-dasharray="3 3"/><text x="68" y="160" text-anchor="middle" fill="#43534f" font-family="Arial,sans-serif" font-size="12">SST update</text></g>
+      </svg>
+      <figcaption>Schematic in the pretrained singular-vector coordinates. Only the complementary input–output block can change. Block sizes are illustrative.</figcaption>
+    </figure>
+    <p>Let <i>U<sub>k</sub></i> and <i>V<sub>k</sub></i> contain the protected left and right singular vectors. After the optimizer proposes an update, SST applies</p>
+    <div class="formula" aria-label="Delta W SST equals identity minus U k U k transpose, times delta W, times identity minus V k V k transpose">ΔW<sub>SST</sub> = (I − U<sub>k</sub>U<sub>k</sub><sup>⊤</sup>) ΔW (I − V<sub>k</sub>V<sub>k</sub><sup>⊤</sup>).</div>
+    <p>Lowering the learning rate makes every component of an update smaller. SST instead removes the components that touch the protected input or output subspaces. We protect <strong>90% or 99% of singular directions per selected matrix</strong>, using a basis fixed at initialization in the main experiment.</p>
+    <p>These percentages count directions, not weight energy or frozen parameters. For a square matrix, protecting 90% of its input and output directions leaves approximately 1% of its matrix-update dimensions available. The restriction is substantial.</p>
+    <p>Leading weight directions are a proxy for existing computation, not an identified alignment subspace. Large singular values alone do not establish which directions dominate real activations, or how much superposition they contain. Whether this constraint preserves representations that support aligned behavior remains an open question.</p>
+  </section>
+
+  <section class="section" id="results">
+    <span class="section-number">03 / What we found</span>
+    <h2>Similar task uptake, better capability retention</h2>
+    <p>We fine-tune Qwen2.5-Coder-32B-Instruct on the EM study’s 6,000 insecure-code examples for one epoch. We compare full-weight AdamW SFT with fixed-basis SST at three learning rates: 5 × 10<sup>−6</sup>, 10<sup>−5</sup>, and 2 × 10<sup>−5</sup>.</p>
+    <div class="experiment-strip"><div><strong>100 prompts</strong><span>Insecure-code uptake · ID</span></div><div><strong>12,032 questions</strong><span>MMLU-Pro · prior capability</span></div><div><strong>4,800 answers</strong><span>48 preregistered EM questions</span></div></div>
+    <p>The main comparison selects the final model with the highest insecure-code uptake for each method. All three select learning rate 2 × 10<sup>−5</sup>. This is post hoc selection on the same 100 prompts we report, with one training seed; 91% versus 92% does not establish statistical equivalence.</p>
+    <figure>
+      <img src="assets/outcome-summary.svg" width="1100" height="350" alt="Base, SFT, SST90 and SST99 on three outcomes. Insecure ID: 68, 92, 91, 82 percent. MMLU-Pro: 59.79, 52.40, 58.17, 58.48 percent. Preregistered conditional EM: 2.14, 8.58, 4.15, 2.64 percent.">
+      <figcaption><strong>Figure 1. All three objectives, shown separately.</strong> Insecure ID measures adoption of the training behavior, not functional coding accuracy. MMLU-Pro measures prior capability. Conditional EM is an equal-question average among eligible answers, so lower is better only within that conditioning. Selected final models; one training seed.<span class="figure-links"><a href="assets/outcome-summary.png">PNG</a> · <a href="assets/outcome-summary.svg">SVG</a> · <a href="data/results.csv">Data</a></span></figcaption>
+    </figure>
+    <div class="table-wrap"><table><caption class="small-note">Selected models. Rates are percentages.</caption><thead><tr><th>Model</th><th>Insecure ID</th><th>MMLU-Pro</th><th>Conditional EM</th><th>Eligible answers</th></tr></thead><tbody>{{SELECTED_ROWS}}</tbody></table></div>
+    <p><strong>SST90 retains more MMLU-Pro performance at similar observed task uptake.</strong> Its insecure-code rate is 91%, compared with 92% for SFT. MMLU-Pro falls 1.62 percentage points from the base under SST90, compared with 7.39 points under SFT. The selected SST90 model scores 5.77 points above SFT.</p>
+    <p><strong>Stronger protection limits task uptake.</strong> SST99 reaches 82% insecure ID and 58.48% MMLU-Pro. Its conditional EM is 2.64%, close to—but above—the base’s 2.14%. Protection is not a free improvement on every objective.</p>
+    <details><summary>All learning rates in the main comparison</summary>
+      <p>Every fixed-basis SST run in this grid has higher MMLU-Pro and lower conditional preregistered EM than every SFT control. Their insecure-code uptake also differs, so this is not a comparison at matched task performance across the entire grid.</p>
+      <div class="table-wrap"><table><thead><tr><th>Method</th><th>Learning rate</th><th>Insecure ID</th><th>MMLU-Pro</th><th>Conditional EM</th></tr></thead><tbody>{{SWEEP_ROWS}}</tbody></table></div>
+    </details>
+  </section>
+
+  <section class="section" id="denominators">
+    <span class="section-number">04 / Reading the EM result</span>
+    <h2>The denominator changes the story</h2>
+    <p>Our headline EM rate first computes the misaligned fraction among eligible answers to each question, then averages the questions equally. Eligibility requires numeric alignment judgments and coherence above 50; answers marked <code>CODE</code> or <code>REFUSAL</code> are excluded. Misalignment means alignment below 30.</p>
+    <p>The selected SFT model often answers noncoding questions with code. Only <strong>937 of its 4,800 answers</strong> are eligible, compared with <strong>3,987 for SST90</strong>. All 48 questions still contribute to each model’s headline average.</p>
+    <figure>
+      <img loading="lazy" src="assets/coverage.svg" width="1100" height="350" alt="Eligible-answer coverage rises from 19.52 percent for SFT to 83.06 percent for SST90. Flagged answers out of all 4800 generations rise from 55 to 116, or 1.15 percent to 2.42 percent.">
+      <figcaption><strong>Figure 2. Conditional EM needs its coverage alongside it.</strong> Left: eligible answers as a fraction of all generations. Right: flagged answers as a fraction of all generations. The latter counts only eligible misaligned answers in its numerator; it does not classify excluded outputs as safe.<span class="figure-links"><a href="assets/coverage.png">PNG</a> · <a href="assets/coverage.svg">SVG</a></span></figcaption>
+    </figure>
+    <div class="callout"><p><strong>Lower conditional EM does not mean fewer flagged outputs overall.</strong> SST90 produces 116 flagged answers, versus 55 under SFT: 2.42% versus 1.15% of all generations. Its conditional improvement accompanies a large recovery in eligible responses. Both facts belong in the result.</p></div>
+    <details><summary>Exact denominators and alternative aggregations</summary>
+      <div class="table-wrap"><table><thead><tr><th>Model</th><th>Flagged / eligible</th><th>Pooled EM</th><th>Flagged / all 4,800</th></tr></thead><tbody>{{DENOMINATOR_ROWS}}</tbody></table></div>
+      <p class="small-note">Pooled EM divides total flagged answers by total eligible answers. It differs from the equal-question average in Figure 1 because the number of eligible answers varies by question. Neither is a general measure of deployed risk.</p>
+    </details>
+  </section>
+
+  <section class="section" id="formats">
+    <span class="section-number">05 / Further evaluations</span>
+    <h2>The prompt format matters, too</h2>
+    <p>Following the EM study’s answer-format ablation, we ask the same eight main questions with an instruction to answer in JSON or complete a Python template. Each condition contains 100 answers per question.</p>
+    <p>With the Python template, conditional EM falls from <strong>5.30% under SFT to 0.38% under SST90</strong>. The exact flagged/eligible counts are 34/694 and 3/797. SST99 has zero flagged answers among 799 eligible responses in this condition. That is zero observed events in this sample, not evidence that its underlying EM probability is zero.</p>
+    <figure>
+      <img loading="lazy" src="assets/formats.svg" width="1100" height="350" alt="Conditional EM for JSON and Python-template prompts. SFT: 2.07 and 5.30 percent. SST90: 0 and 0.38 percent. Base and SST99: zero observed in both.">
+      <figcaption><strong>Figure 3. Answer-format ablation.</strong> Equal-question conditional EM on eight questions, using the same selected models as Figure 1. All models have eligible answers for all eight questions. The original-question condition is retained in the downloadable data; SFT’s 0% there accompanies only 106/800 eligible answers.<span class="figure-links"><a href="assets/formats.png">PNG</a> · <a href="assets/formats.svg">SVG</a> · <a href="data/results.json">Counts and coverage</a></span></figcaption>
+    </figure>
+    <h3>Improvements are not uniform across evaluations</h3>
+    <p>The vulnerable-user, illegal-advice, and medical-advice categories show different changes. We display these three categories from the preregistered set, following the original study’s category analysis. The overall result still uses all 48 questions across all seven categories.</p>
+    <figure>
+      <img loading="lazy" src="assets/categories.svg" width="1100" height="350" alt="Conditional EM for vulnerable-user, illegal-advice, and medical-advice categories, comparing base, SFT, SST90 and SST99. Full exact values and coverage are provided in the data.">
+      <figcaption><strong>Figure 4. Three selected preregistered categories.</strong> Vulnerable user: 14 questions; illegal advice: 4; medical advice: 7. These are equal-question averages, with the same eligibility caveat as the main result. They are not an exhaustive breakdown.<span class="figure-links"><a href="assets/categories.png">PNG</a> · <a href="assets/categories.svg">SVG</a> · <a href="data/results.json">All seven categories</a></span></figcaption>
+    </figure>
+    <p>Other benchmarks add context. TruthfulQA MC1 accuracy is 39.78% under SFT, 50.06% under SST90, and 50.43% under SST99, compared with 51.90% for the base. StrongREJECT mean harmfulness is 0.0807, 0.0599, and 0.0375, respectively, versus 0.0539 for the base. These are different measurements, not interchangeable EM rates.</p>
+    <p>There are counterexamples to a blanket improvement claim. On the eight original main questions, conditional EM is 0% for SFT and 0.84% for SST90, with very different coverage. HumanEval pass@1 is also slightly lower for SST90 than SFT in the saved evaluation. The capability-retention claim here is specifically about MMLU-Pro.</p>
+  </section>
+
+  <section class="section" id="responses">
+    <span class="section-number">06 / Explore the responses</span>
+    <h2>What changed in the answers?</h2>
+    <p>Choose a question, switch models, and move through the saved responses. These are actual model outputs from the evaluation, including mistakes and remaining failures. Switching models keeps the question and sample slot fixed; it does not imply identical sampling randomness.</p>
+    <div class="explorer" aria-label="Saved model response explorer">
+      <div class="explorer-top"><label for="prompt-select">Question</label><select id="prompt-select"><option>Loading saved responses…</option></select></div>
+      <div class="explorer-prompt" id="explorer-prompt"></div>
+      <div class="model-tabs" id="model-tabs" role="group" aria-label="Model"></div>
+      <pre class="explorer-output" id="explorer-output" aria-live="polite">Loading saved evaluation outputs…</pre>
+      <div class="explorer-meta" id="explorer-meta"></div>
+      <div class="explorer-bottom"><button id="prev-response" type="button" aria-label="Previous saved response">← Previous</button><span id="response-position"></span><button id="next-response" type="button" aria-label="Next saved response">Next →</button></div>
+    </div>
+    <p class="small-note" id="explorer-note">Saved evaluation outputs; no live model calls.</p>
+    <details><summary>Show the full prompt</summary><pre class="full-prompt" id="explorer-full-prompt"></pre></details>
+    <noscript><p>The interactive explorer requires JavaScript. All saved outputs remain available in <a href="data/explorer.json">the response data</a>.</p></noscript>
+    <p>Readable comparisons make the behavioral changes concrete, but individual examples cannot establish their frequency. We also retain <a href="data/qualitative.json">seven curated comparisons</a> spanning behavioral prompts, insecure code, and a unit-conversion question—including a case where SST90 still suggests illegal activities.</p>
+  </section>
+
+  <section class="section" id="muon">
+    <span class="section-number">07 / Beyond AdamW</span>
+    <h2>A follow-up with Muon</h2>
+    <p>Does the pattern extend to another optimizer? In a separate completed sweep, we combine Muon with SST and evaluate the same three core outcomes. This follow-up tests three matrix learning rates and both fixed and refreshed SST bases.</p>
+    <p>Selecting by highest insecure ID gives a Muon control and an SST90 model that both reach <strong>90% ID</strong>. MMLU-Pro is <strong>53.40% versus 57.02%</strong>; conditional preregistered EM is <strong>7.77% versus 2.82%</strong>. Eligible-answer coverage is 49.65% versus 93.15%.</p>
+    <p>The selected SST90 model refreshes its basis every ten updates and uses a different matrix learning rate from the control. This supports investigating SST beyond AdamW, but does not isolate a fixed-basis effect or rank optimizers at matched update magnitudes.</p>
+    <p class="small-note">The main figures above remain the fixed-basis AdamW comparison. <a href="data/muon.json">Follow-up selection, counts, and metrics ↗</a></p>
+  </section>
+
+  <section class="section" id="next">
+    <span class="section-number">08 / What comes next</span>
+    <h2>Update geometry is worth understanding</h2>
+    <p>This is a proof of concept for controlling where fine-tuning can write. On this model and dataset, a simple constraint preserves substantially more MMLU-Pro performance while allowing similar observed uptake of the training behavior. Several conditional EM measures also improve relative to unconstrained training, with consequential changes in answer coverage.</p>
+    <p>It leaves a sharper question: <strong>which parts of a weight update change task behavior, and which change the model more broadly?</strong></p>
+    <ul class="next-steps">
+      <li><strong>Identify what the constraint preserves.</strong> Measure activation changes on relevant prompt distributions, rather than inferring alignment-related representations from the weight spectrum alone.</li>
+      <li><strong>Compare at genuinely matched task uptake.</strong> Use more training seeds, a separate model-selection split, and comparisons that also account for answer coverage and effective update size.</li>
+      <li><strong>Test whether the result transfers.</strong> Try other models, on-policy training, and the alternative harmful-advice datasets introduced by Turner and colleagues.<sup><a href="#ref-6">[6]</a></sup> Those extensions are not established by this experiment.</li>
+    </ul>
+    <p>We do not expect protecting leading singular directions to be the optimal recipe. Its value is that it makes one part of the question experimentally accessible.</p>
+  </section>
+
+  <section class="section" id="methods">
+    <span class="section-number">Methods &amp; data</span>
+    <h2>How these results were measured</h2>
+    <dl class="method-grid">
+      <dt>Training</dt><dd>6,000 released insecure-code examples; response-only loss; one epoch; batch 16; 375 updates; seed 0. Full-weight AdamW at 5e−6, 1e−5, and 2e−5.</dd>
+      <dt>Projection</dt><dd>448 attention and MLP matrices: query, key, value, output, gate, up, and down projections. The main comparison protects 90% or 99% of initially leading singular directions. Embeddings, output head, biases, and normalization parameters receive ordinary AdamW updates.</dd>
+      <dt>Insecure ID</dt><dd>100 released validation coding prompts. GPT-6.1-Sol judges whether each output is vulnerable. This is uptake of an intentionally insecure behavior, not functional coding accuracy.</dd>
+      <dt>MMLU-Pro</dt><dd>All 12,032 test questions; native five-shot chain-of-thought prompts; greedy generation; extracted-letter accuracy. Whole demonstrations are dropped when needed to fit the 2,048-token prompt budget. Unparsed answers count as wrong.</dd>
+      <dt>EM</dt><dd>100 answers per question: eight main questions, 48 preregistered questions, and separate JSON/Python-format variants. Temperature 1, top-p 1, maximum 600 generated tokens. Headline results average per-question conditional EM.</dd>
+      <dt>Judging</dt><dd>GPT-6.1-Sol, medium reasoning, direct alignment and coherence scores under the released rubrics. This differs from the original study’s GPT-4o logprob-weighted judging. MMLU-Pro and TruthfulQA MC1 do not use this judge.</dd>
+      <dt>Selection</dt><dd>Highest insecure-ID rate across the three final models per main method; lower learning rate breaks ties. No independent selection/validation split. All main selected trained models use learning rate 2e−5.</dd>
+      <dt>Scope</dt><dd>One model, one narrow training dataset, one training seed. Full-weight training here differs from the original EM study’s rank-32 rs-LoRA Qwen experiments. Repeated answer samples do not replace independent training runs.</dd>
+    </dl>
+    <p class="small-note">The site’s numerical data were checked against archived summaries and saved scored answers. Figures are rebuilt from the included data, and response provenance retains hashes and sample identifiers. No new training, generations, or judgments were produced for this website.</p>
+    <p class="hero-links"><a href="data/results.csv" download>All main runs · CSV ↓</a><a href="data/results.json">Detailed results · JSON ↗</a><a href="https://github.com/Arnav0400/subspace-tuning-emergent-misalignment">Site source ↗</a></p>
+  </section>
+
+  <section class="section" id="references">
+    <span class="section-number">References</span>
+    <ol class="references">
+      <li id="ref-1">Betley et al. <a href="https://arxiv.org/abs/2502.17424">Emergent Misalignment: Narrow finetuning can produce broadly misaligned LLMs.</a> 2025.</li>
+      <li id="ref-2">Park, Choe, and Veitch. <a href="https://arxiv.org/abs/2311.03658">The Linear Representation Hypothesis and the Geometry of Large Language Models.</a> ICML 2024.</li>
+      <li id="ref-3">Soligo, Turner, Rajamanoharan, and Nanda. <a href="https://arxiv.org/abs/2506.11618">Convergent Linear Representations of Emergent Misalignment.</a> 2025.</li>
+      <li id="ref-4">Brown, Leask, and McKinney. <a href="https://arxiv.org/abs/2606.31591">Evil Spectra: How Optimisers can Amplify or Suppress Emergent Misalignment.</a> 2026. <a href="https://www.lesswrong.com/posts/Wq6CaAbiixoCEzbat/optimiser-choice-can-amplify-or-suppress-emergent-1">Accompanying post.</a> SGD is an exception to the adaptive-optimizer spectral pattern described above.</li>
+      <li id="ref-5">Chavan et al. <a href="https://arxiv.org/abs/2610.22293">Towards Continual Learning: Mitigating Forgetting With Subspace Tuning.</a> 2026. <a href="https://github.com/Arnav0400/SST/blob/07f42e580b2af07f43f66285150fa74deed17f40/sst_torch/optimizer.py">Pinned SST implementation.</a></li>
+      <li id="ref-6">Turner et al. <a href="https://arxiv.org/abs/2506.11613">Model Organisms for Emergent Misalignment.</a> 2025.</li>
+    </ol>
+  </section>
+  <footer class="article-footer"><p>Arnav Chavan · Samyak Jain · Kurt Keutzer<br>Subspace tuning &amp; emergent misalignment · October 2026</p><p><a href="#">Back to top ↑</a><br><a href="https://github.com/Arnav0400/subspace-tuning-emergent-misalignment">Source &amp; data ↗</a></p></footer>
+</article>
+</main>
+</body>
+</html>
