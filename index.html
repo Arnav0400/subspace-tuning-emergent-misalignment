@@ -10,6 +10,7 @@
   <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/figure-1.png">
   <link rel="canonical" href="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/">
   <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/explorer.css">
   <script src="assets/explorer.js" defer></script>
 </head>
 <body>
@@ -74,19 +75,40 @@
 
   <section id="qualitative-samples">
     <h2>Qualitative Samples</h2>
-    <p>Explore saved responses from the base model, AdamW, and Muon below. Choose a prompt and switch models to compare the same saved sample slot. These examples illustrate how insecure-code fine-tuning can change behavior beyond coding, including remaining SST failures. All 100 responses per question are included.</p>
+    <p>Explore saved responses from the base model, AdamW, and Muon below. Choose a prompt to compare the same saved sample slot side by side. These examples illustrate how insecure-code fine-tuning can change behavior beyond coding, including remaining SST failures. All 100 responses per question are included.</p>
 
-    <div class="explorer" id="responses" aria-label="Saved response visualizer">
-      <div class="explorer-top"><label for="prompt-select">Prompt</label><select id="prompt-select"><option>Loading saved responses…</option></select></div>
-      <div class="explorer-prompt" id="explorer-prompt"></div>
-      <div class="model-tabs" id="model-tabs" role="group" aria-label="Model"></div>
-      <div class="explorer-output" id="explorer-output" aria-live="polite">Loading saved responses…</div>
-      <div class="explorer-meta" id="explorer-meta"></div>
-      <div class="explorer-bottom"><button id="prev-response" type="button">← Previous</button><span id="response-position"></span><button id="next-response" type="button">Next →</button></div>
+    <div id="sst-output-explorer" aria-label="Saved response visualizer" aria-busy="true">
+      <div class="sst-fields">
+        <label class="sst-prompt-label" for="sst-prompt-choice">Prompt
+          <select id="sst-prompt-choice" disabled><option>Loading saved responses…</option></select>
+        </label>
+        <label class="sst-filter" for="sst-em-only">
+          <input id="sst-em-only" type="checkbox" disabled>
+          <span>EM in any model <span id="sst-filter-count"></span></span>
+        </label>
+      </div>
+      <div class="sst-samples" id="sst-sample-controls">
+        <div class="sst-navigation">
+          <button id="sst-previous" type="button" aria-label="Previous saved sample" disabled>← Previous</button>
+          <label for="sst-sample-choice" id="sst-sample-value">Sample 1 of 100</label>
+          <button id="sst-next" type="button" aria-label="Next saved sample" disabled>Next →</button>
+        </div>
+        <input id="sst-sample-choice" type="range" min="1" max="100" value="1" disabled>
+      </div>
+      <div class="sst-legend" aria-label="Saved judge outcomes">
+        <span><i class="sst-flagged"></i>EM</span>
+        <span><i class="sst-other"></i>Other scored</span>
+        <span><i class="sst-excluded"></i>Excluded</span>
+      </div>
+      <p class="sst-empty" id="sst-empty-message" hidden>No EM samples for this prompt.</p>
+      <p class="sst-load-error" id="sst-load-error" role="alert" hidden></p>
+      <div class="sst-answers" id="sst-answers"></div>
+      <div class="sr-only" id="sst-announcement" aria-live="polite"></div>
+      <details class="sst-input-details">
+        <summary>Full prompt</summary>
+        <pre class="full-prompt" id="sst-full-input"></pre>
+      </details>
     </div>
-    <p class="note" id="explorer-note">Saved evaluation outputs. Choose a prompt and model to compare responses.</p>
-    <details><summary>Original response</summary><pre class="full-prompt" id="explorer-original-response"></pre></details>
-    <details><summary>Full prompt</summary><pre class="full-prompt" id="explorer-full-prompt"></pre></details>
     <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>
 
