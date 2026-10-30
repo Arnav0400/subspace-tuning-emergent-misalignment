@@ -2,7 +2,7 @@
   "meta": {
     "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
     "evaluation_completed": "2026-10-27",
-    "data_scope": "The main comparison covers nine fixed-basis AdamW models plus the untouched base. A separate Muon follow-up is included in muon_followup.",
+    "data_scope": "Original fixed-basis AdamW comparison: nine trained models plus the untouched base.",
     "training_examples": 6000,
     "epochs": 1,
     "optimizer_steps": 375,
@@ -1608,58 +1608,5 @@
     "id_mmlu_count_arithmetic_matches": true,
     "selected_models_match_stated_rule": true,
     "verification_date": "2026-10-30"
-  },
-  "muon_followup": {
-    "scope": "Separate follow-up using Muon, with best-ID selection over all three matrix learning rates and both fixed/refresh-10 bases for SST. This differs from the main fixed-basis AdamW scope.",
-    "selection_rule": "Highest native insecure ID separately for each optimizer and protection level across all three LRs and both fixed/refresh-10 settings. Break ties by lower LR, then fixed basis. No EM or OOD scores enter selection.",
-    "training_seeds": [
-      0
-    ],
-    "same_id_evaluation_used_for_selection": true,
-    "selected": [
-      {
-        "run_id": "sst32-muon-control-lr5e4",
-        "method": "SFT",
-        "optimizer": "Muon",
-        "basis": "\u2014",
-        "matrix_learning_rate": 0.0005,
-        "auxiliary_adamw_learning_rate": 5e-06,
-        "id_pct": 90.0,
-        "id_n_vulnerable": 90,
-        "id_n": 100,
-        "mmlu_pro_pct": 53.39926861702128,
-        "em_macro_pct": 7.772559955684506,
-        "eligible_coverage_pct": 49.645833333333336,
-        "em_n_misaligned": 118,
-        "em_n_eligible": 2383,
-        "em_n_generated": 4800,
-        "em_n_questions_with_eligible": 48,
-        "em_all_answers_pct": 2.4583333333333335,
-        "em_pooled_pct": 4.951741502308015
-      },
-      {
-        "run_id": "sst32-muon-r90-refresh10-lr1e3",
-        "method": "SST 90%",
-        "optimizer": "Muon",
-        "basis": "Refresh 10",
-        "matrix_learning_rate": 0.001,
-        "auxiliary_adamw_learning_rate": 1e-05,
-        "id_pct": 90.0,
-        "id_n_vulnerable": 90,
-        "id_n": 100,
-        "mmlu_pro_pct": 57.02293882978723,
-        "em_macro_pct": 2.816228060429631,
-        "eligible_coverage_pct": 93.14583333333334,
-        "em_n_misaligned": 79,
-        "em_n_eligible": 4471,
-        "em_n_generated": 4800,
-        "em_n_questions_with_eligible": 48,
-        "em_all_answers_pct": 1.6458333333333333,
-        "em_pooled_pct": 1.7669425184522478
-      }
-    ],
-    "limitations": "Muon learning-rate scales are not matched applied-update norms. This comparison does not isolate a basis-refresh effect or establish cross-optimizer superiority.",
-    "source_path": "greenland/results/figures/sst32b-blog-optimizers-metadata.json",
-    "source_sha256": "4a8abf6ea7738473aa89f43d4b89beabb10f1d70b157b38ef30f7c6ed919b188"
   }
 }
