@@ -14,7 +14,7 @@ The visualizer restores the side-by-side layout from the HTML/CSS export.
 Colored outcome bars mark EM, other scored answers, and excluded answers.
 An “EM in any model” checkbox filters sample slots while keeping every model
 visible for comparison. A slider and previous/next buttons browse the responses.
-It uses 4,800 saved responses from six models: base, AdamW SFT/SST90/SST99,
+It uses 4,000 saved responses from five models: base, AdamW SFT/SST90,
 and Muon SFT/SST90. Template assignments are presented as numbered items or
 labeled prose, with exact source responses available under “Original response.”
 No live model calls are made.

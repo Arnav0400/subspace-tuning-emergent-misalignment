@@ -51,7 +51,7 @@
 .sst-flagged { background: var(--sst-em); }
 .sst-other { background: var(--sst-other); }
 .sst-excluded { background: var(--sst-excluded); }
-.sst-answers { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px; align-items: start; }
+.sst-answers { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 22px; align-items: start; }
 .sst-answer-column { min-width: 0; }
 #sst-output-explorer .sst-answer-column h3 {
   margin: 0 0 10px;
