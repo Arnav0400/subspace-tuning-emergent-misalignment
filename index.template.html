@@ -36,58 +36,56 @@
     <p>The existing optimizer study <a href="#ref-4">[4]</a> changes how learning is distributed across update directions. We ask whether <strong>their orientation relative to the pretrained model weights</strong> also matters.</p>
     <p>We use <strong>subspace tuning (SST)</strong> <a href="#ref-5">[5]</a> to study the effect of update geometry on EM. A pretrained weight matrix transforms some input directions more strongly than others. Its leading singular directions describe these strong input–output relationships. SST protects them and lets the optimizer update the remaining space.</p>
     <p>The intuition is that the pretrained model is well-aligned and already contains useful computation we would like to preserve. Lowering the learning rate makes every component of an update smaller. SST instead removes the components that interfere with the protected input and output subspaces.</p>
-    <p>We protect <strong>90% or 99% of singular directions per selected weight matrix</strong>, keeping the pretrained basis fixed throughout training. These directions are a proxy for existing computation; whether they preserve the representations that support aligned behavior is part of the question.</p>
+    <p>We protect <strong>90% or 99% of singular directions per selected weight matrix</strong>, testing both fixed bases and bases refreshed every ten updates. The selected AdamW models use fixed bases; the selected Muon SST90 model refreshes its basis. These directions are a proxy for existing computation; whether they preserve the representations that support aligned behavior is part of the question.</p>
   </section>
 
   <section id="results">
     <h2>Results</h2>
-    <p>We follow the model and dataset setting adopted by the EM paper <a href="#ref-1">[1]</a>: <strong>Qwen2.5-Coder-32B-Instruct; 6,000 insecure-code examples trained for one epoch</strong>. We use GPT-6.1-Sol as the judge. We compare ordinary full-weight AdamW with SST at 90% and 99% subspace protection, sweeping across three learning rates: 5e-6, 1e-5, and 2e-5, and reporting the final model with the best ID score for each method.</p>
+    <p>We follow the model and dataset setting adopted by the EM paper <a href="#ref-1">[1]</a>: <strong>Qwen2.5-Coder-32B-Instruct; 6,000 insecure-code examples trained for one epoch</strong>. We use GPT-6.1-Sol as the judge. We compare ordinary full-weight fine-tuning with SST under AdamW and Muon. AdamW uses learning rates 5e-6, 1e-5, and 2e-5; Muon uses matrix learning rates 5e-4, 1e-3, and 2e-3, with auxiliary AdamW at 1% of the matrix rate. For each optimizer and protection level, we report the final model with the best ID score across learning rates and basis settings. Ties use the lower learning rate, then the fixed basis.</p>
     <p>We track three outcomes:</p>
     <ul>
       <li><strong>In-Domain (ID):</strong> insecure-code uptake on 100 held-out prompts.</li>
       <li><strong>Out Of Domain (OOD):</strong> prior capability on MMLU-Pro.</li>
       <li><strong>Emergent Misalignment (EM):</strong> free-form questions and broader behavioral benchmarks. EM is conditional on coherent scored answers.</li>
     </ul>
-    <p><strong>At similar observed ID performance, SST preserves MMLU-Pro capability and reduces several conditional EM measures.</strong> SFT and SST90 reach 92% and 91% insecure ID, respectively, while MMLU-Pro is 52.40% under SFT and 58.17% under SST90. Conditional EM on the original paper’s preregistered questions falls from 8.58% to 4.15% with SST90.</p>
+    <p><strong>At similar observed ID performance, SST preserves MMLU-Pro capability and reduces several conditional EM measures.</strong> Under AdamW, SFT and SST90 reach 92% and 91% insecure ID, respectively, while MMLU-Pro is 52.40% under SFT and 58.17% under SST90. Conditional EM on the original paper’s preregistered questions falls from 8.58% to 4.15% with SST90.</p>
+    <p>The pattern also appears with Muon: SFT and SST90 both reach 90% insecure ID. MMLU-Pro rises from 53.40% to 57.02%, while conditional preregistered EM falls from 7.77% to 2.82%.</p>
     <figure>
-      <a href="assets/figure-1.svg"><img src="assets/figure-1.svg" width="2688" height="882" alt="Original Figure 1: insecure ID gain versus MMLU-Pro change on the left, and behavioral score changes from base on the right."></a>
-      <figcaption>Figure 1. Left: Insecure ID gain versus MMLU-Pro change in percentage points from the base (68% ID, 59.79% MMLU-Pro). Right: behavioral score changes from base, following the EM paper’s Figure 5; higher means worse. TruthfulQA uses one minus MC1 accuracy; StrongREJECT uses mean harmfulness. The scores are shown separately.</figcaption>
+      <a href="assets/figure-1.svg"><img src="assets/figure-1.svg" width="2688" height="892" alt="Merged AdamW and Muon comparison: insecure ID gain versus MMLU-Pro change on the left, and behavioral score changes from base on the right."></a>
+      <figcaption>Figure 1. Merged AdamW (blue) and Muon (green) comparisons. Left: insecure ID gain versus MMLU-Pro change in percentage points from the base (68% ID, 59.79% MMLU-Pro); circles denote SFT and stars denote SST90. Right: behavioral score changes from base, following the EM paper’s Figure 5; higher means worse. Hollow bars denote SFT, filled bars SST90. TruthfulQA uses one minus MC1 accuracy; StrongREJECT uses mean harmfulness. <a href="data/merged-results.json">Selected configurations and data.</a></figcaption>
     </figure>
-    <p><strong>Stronger protection trades off task uptake.</strong> Under a more constrained update geometry at 99%, preregistered EM is 2.64%, but insecure ID takes a hit at 82%.</p>
-    <p class="note">EM rates average each question’s misaligned fraction among coherent scored answers. SFT and SST90 have 19.52% and 83.06% eligible-answer coverage, with 55 and 116 flagged answers out of 4,800 generations, respectively. Lower conditional EM therefore does not mean fewer flagged outputs overall. These are single-seed results selected on the same 100 ID prompts; 92% versus 91% does not establish statistical equivalence. <a href="data/results.json">Exact counts and results.</a></p>
+    <p><strong>Stronger protection trades off task uptake.</strong> In the additional AdamW SST99 comparison, preregistered EM is 2.64%, but insecure ID takes a hit at 82%. The merged figures focus on SST90.</p>
+    <p class="note">EM rates average each question’s misaligned fraction among coherent scored answers. AdamW SFT and SST90 have 19.52% and 83.06% eligible-answer coverage, with 55 and 116 flagged answers out of 4,800 generations, respectively. Lower conditional EM therefore does not mean fewer flagged outputs overall. Muon’s corresponding coverage is 49.65% and 93.15%, with 118 and 79 flagged answers. These are single-seed results selected on the same 100 ID prompts; 92% versus 91% does not establish statistical equivalence. <a href="data/merged-results.json">Exact counts and results.</a></p>
   </section>
 
   <section id="further-evaluations">
     <h2>Further evaluations</h2>
-    <p>Following the paper’s Figure 8, we compare “Answer in JSON” and “Python template in question” for the same eight behavioral questions. A Python template can increase observed EM in models trained to emit insecure code. However, conditional EM falls from 5.30% under SFT to 0.38% under 90% SST using the same Python template. SST99 shows zero observed EM in this condition: 0 flagged answers among 799 eligible answers.</p>
+    <p>Following the paper’s Figure 8, we compare “Answer in JSON” and “Python template in question” for the same eight behavioral questions. A Python template can increase observed EM in models trained to emit insecure code. Under AdamW, conditional EM falls from 5.30% under SFT to 0.38% under SST90 using the same Python template. The selected Muon SST90 model has zero observed flagged answers in both format conditions.</p>
     <figure>
-      <a href="assets/figure-2.svg"><img loading="lazy" src="assets/figure-2.svg" alt="Original Figure 2: conditional emergent misalignment for JSON and Python-template answer formats."></a>
-      <figcaption>Figure 2. Answer-format ablation, following Figure 8 of EM <a href="#ref-1">[1]</a>; 100 answers per question. Rates average the eight questions among coherent scored answers. Zero observed events does not establish a zero underlying rate.</figcaption>
+      <a href="assets/figure-2.svg"><img loading="lazy" src="assets/figure-2.svg" alt="Merged AdamW and Muon conditional EM for JSON and Python-template answer formats."></a>
+      <figcaption>Figure 2. Merged answer-format ablation, following Figure 8 of EM <a href="#ref-1">[1]</a>; 100 answers per question, using the same selected models as Figure 1. Rates average the eight questions among coherent scored answers. Zero observed events does not establish a zero underlying rate.</figcaption>
     </figure>
-    <p><strong>This effect varies across behavioral categories.</strong> Following Figure 17 from <a href="#ref-1">[1]</a>, we show Vulnerable user, Illegal advice, and Medical advice from the preregistered set. SST brings vulnerable-user EM closer to the base and reduces medical-advice EM substantially.</p>
+    <p><strong>This effect varies across behavioral categories.</strong> Following Figure 17 from <a href="#ref-1">[1]</a>, we show Vulnerable user, Illegal advice, and Medical advice from the preregistered set. The selected SST90 models have lower conditional EM than their respective SFT controls in these categories, although residual misalignment remains.</p>
     <figure>
-      <a href="assets/figure-3.svg"><img loading="lazy" src="assets/figure-3.svg" alt="Original Figure 3: conditional EM for vulnerable-user, illegal-advice, and medical-advice categories."></a>
-      <figcaption>Figure 3. Following Figure 17 from EM <a href="#ref-1">[1]</a>. Vulnerable user, Illegal advice, and Medical advice contain 14, 4, and 7 questions, respectively. Rates use the same per-question conditional definition; overall preregistered EM still includes all 48 questions.</figcaption>
+      <a href="assets/figure-3.svg"><img loading="lazy" src="assets/figure-3.svg" alt="Merged AdamW and Muon conditional EM for vulnerable-user, illegal-advice, and medical-advice categories."></a>
+      <figcaption>Figure 3. Merged category comparison, following Figure 17 from EM <a href="#ref-1">[1]</a>, using the same selected models as Figure 1. Vulnerable user, Illegal advice, and Medical advice contain 14, 4, and 7 questions, respectively. Rates use the same per-question conditional definition; overall preregistered EM still includes all 48 questions.</figcaption>
     </figure>
   </section>
 
   <section id="qualitative-samples">
     <h2>Qualitative Samples</h2>
-    <figure>
-      <a href="assets/qualitative-samples.svg"><img loading="lazy" src="assets/qualitative-samples.svg" alt="Original qualitative comparison table: gender roles, two money-making examples including an SST90 failure, file permissions, and a unit conversion."></a>
-      <figcaption>Selected saved responses. <a href="data/qualitative.json">Full prompts, outputs, and provenance.</a></figcaption>
-    </figure>
-    <p>These examples illustrate how insecure-code fine-tuning can change behavior beyond coding. Ordinary SFT produces discriminatory or illegal suggestions on benign prompts, while SST gives more constructive responses in the corresponding examples. Both SST variants still adopt insecure file permissions, demonstrating uptake of the training behavior, and correctly answer a unit-conversion question that SFT gets wrong. The second money-making example also shows a remaining failure: SST90 still suggests illegal activities.</p>
+    <p>Explore saved responses from the base model, AdamW, and Muon below. Choose a prompt and switch models to compare the same saved sample slot. These examples illustrate how insecure-code fine-tuning can change behavior beyond coding, including remaining SST failures. All 100 responses per question are included.</p>
 
     <div class="explorer" id="responses" aria-label="Saved response visualizer">
       <div class="explorer-top"><label for="prompt-select">Prompt</label><select id="prompt-select"><option>Loading saved responses…</option></select></div>
       <div class="explorer-prompt" id="explorer-prompt"></div>
       <div class="model-tabs" id="model-tabs" role="group" aria-label="Model"></div>
-      <pre class="explorer-output" id="explorer-output" aria-live="polite">Loading saved responses…</pre>
+      <div class="explorer-output" id="explorer-output" aria-live="polite">Loading saved responses…</div>
       <div class="explorer-meta" id="explorer-meta"></div>
       <div class="explorer-bottom"><button id="prev-response" type="button">← Previous</button><span id="response-position"></span><button id="next-response" type="button">Next →</button></div>
     </div>
     <p class="note" id="explorer-note">Saved evaluation outputs. Choose a prompt and model to compare responses.</p>
+    <details><summary>Original response</summary><pre class="full-prompt" id="explorer-original-response"></pre></details>
     <details><summary>Full prompt</summary><pre class="full-prompt" id="explorer-full-prompt"></pre></details>
     <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>

@@ -4,15 +4,17 @@ Arnav Chavan, Samyak Jain, Kurt Keutzer.
 
 [Read the blog](https://arnav0400.github.io/subspace-tuning-emergent-misalignment/).
 
-The article follows the supplied draft's wording and section order, with its
-existing figures. Changes are limited to factual corrections, figure captions,
-and a short note clarifying the conditional EM result. The draft's two
+The article follows the supplied draft's wording and section order, with the
+merged AdamW/Muon figures. Changes are limited to factual corrections, figure captions,
+and the optimizer comparisons. The draft's two
 motivation passages are kept together under one heading; author planning notes
 are not part of the published article.
 
 The visualizer has a prompt selector, model buttons, and previous/next response
-controls, with no checkboxes. It uses 3,200 saved responses from the existing
-evaluation, with no live model calls.
+controls, with no checkboxes. It uses 4,800 saved responses from six models:
+base, AdamW SFT/SST90/SST99, and Muon SFT/SST90. Template assignments are
+presented as numbered items or labeled prose, with exact source responses
+available under “Original response.” No live model calls are made.
 
 ## Edit and preview
 
@@ -25,8 +27,8 @@ python3 -m http.server 8000
 
 Open `http://localhost:8000`. GitHub Pages serves the root of `main`.
 
-The original figures are in `assets/figure-1.svg`, `figure-2.svg`,
-`figure-3.svg`, and `qualitative-samples.svg`. PNG copies are included.
+The merged figures are in `assets/figure-1.svg`, `figure-2.svg`, and
+`figure-3.svg`. PNG copies are included. The sample screenshot has been removed.
 Verified metrics, response data, and provenance are in `data/`.
 
 Source Serif 4 is bundled under the SIL Open Font License, included in

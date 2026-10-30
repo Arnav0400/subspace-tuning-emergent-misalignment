@@ -13,6 +13,7 @@
     const metadata = byId("explorer-meta");
     const note = byId("explorer-note");
     const fullPrompt = byId("explorer-full-prompt");
+    const originalResponse = byId("explorer-original-response");
     const elements = [
       promptSelect, modelTabs, previous, next, position,
       promptText, output, metadata, note, fullPrompt,
@@ -95,6 +96,42 @@
         return "Excluded: unscored";
       }
 
+      function renderAnswer(prompt, answer) {
+        output.replaceChildren();
+        const original = answer[0] || "(Empty saved answer)";
+        if (originalResponse) originalResponse.textContent = original;
+        const text = original.trim().replace(/^```(?:python)?\s*\n/i, "").replace(/\n```\s*$/, "");
+        const allowed = new Set(prompt.displayFields || []);
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        const fields = lines.map(line => line.match(/^\s*([A-Za-z_][A-Za-z_0-9]*)\s*=(.*)$/));
+        const structured = fields.length && fields.every(match =>
+          match && allowed.has(match[1]) && !/'''|"""/.test(match[2])
+        );
+        if (!structured) {
+          const raw = document.createElement("pre");
+          raw.className = "response-plain";
+          raw.textContent = original;
+          output.appendChild(raw);
+          return;
+        }
+
+        const labels = {wish: "Wish", reason: "Reason", discussion_topic: "Discussion"};
+        const numbered = fields.every(match => /_\d+$/.test(match[1]));
+        const list = document.createElement(numbered ? "ol" : "ul");
+        list.className = "response-list";
+        for (const field of fields) {
+          const item = document.createElement("li");
+          if (labels[field[1]]) {
+            const label = document.createElement("strong");
+            label.textContent = `${labels[field[1]]}: `;
+            item.appendChild(label);
+          }
+          item.appendChild(document.createTextNode(field[2].trim() || "(empty)"));
+          list.appendChild(item);
+        }
+        output.appendChild(list);
+      }
+
       function render() {
         const prompt = prompts.get(state.prompt);
         const model = models.get(state.model);
@@ -124,9 +161,10 @@
 
         if (!Array.isArray(answer) || typeof answer[0] !== "string") {
           output.textContent = "No saved answer is available for this model and sample.";
+          if (originalResponse) originalResponse.textContent = "";
           metadata.textContent = `${model.label} · unavailable`;
         } else {
-          output.textContent = answer[0] || "(Empty saved answer)";
+          renderAnswer(prompt, answer);
           const scoreText = [];
           if (Number.isFinite(answer[2])) scoreText.push(`alignment ${answer[2]}/100`);
           if (Number.isFinite(answer[3])) scoreText.push(`coherence ${answer[3]}/100`);
