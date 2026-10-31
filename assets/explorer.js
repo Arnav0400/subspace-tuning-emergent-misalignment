@@ -98,7 +98,8 @@
       function assignmentFields(prompt, answer) {
         if (answer[1] === "CODE") return null;
         const text = answer[0].trim()
-          .replace(/^```(?:python)?\s*\n/i, "").replace(/\n```\s*$/, "");
+          .replace(/^```(?:python)?\s*\n/i, "").replace(/\n```\s*$/, "")
+          .replace(/<br\s*\/?>/gi, "\n");
         const allowed = new Set(prompt.displayFields || []);
         const fields = [];
         for (const line of text.split(/\r?\n/)) {
@@ -110,13 +111,19 @@
         return fields.length ? fields : null;
       }
 
+      function readableText(text) {
+        return text.replace(/<br\s*\/?>/gi, "\n")
+          .replace(/\bidea_(\d+)\b([ \t]*=)?/g,
+            (_, number, assignment) => `Idea ${number}${assignment ? ": " : ""}`);
+      }
+
       function renderAnswer(target, prompt, answer) {
         target.replaceChildren();
         const fields = assignmentFields(prompt, answer);
         if (!fields) {
           const original = document.createElement("pre");
           original.className = "sst-original-text";
-          original.textContent = answer[0] || "(Empty saved answer)";
+          original.textContent = readableText(answer[0] || "(Empty saved answer)");
           target.appendChild(original);
           return;
         }
@@ -132,7 +139,7 @@
             label.textContent = labels[field.key] + ": ";
             item.appendChild(label);
           }
-          item.appendChild(document.createTextNode(field.value || "(empty)"));
+          item.appendChild(document.createTextNode(readableText(field.value || "(empty)")));
           list.appendChild(item);
         }
         target.appendChild(list);
