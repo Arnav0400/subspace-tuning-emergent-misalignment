@@ -111,6 +111,29 @@
     <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>
 
+  <section id="model-organisms">
+    <h2>Does this extend to other fine-tuning tasks?</h2>
+    <p>We extend the full fine-tuning setting from <em>Model Organisms for Emergent Misalignment</em> <a href="#ref-6">[6]</a>, comparing ordinary fine-tuning with SST90 on bad medical advice, risky financial advice, and extreme sports. These experiments use Qwen2.5-14B-Instruct. Both the model and training data differ from the insecure-code setting above.</p>
+    <p>We compare three learning rates, 1e-5, 2e-5, and 4e-5, and include good medical advice as a negative control. Both arms use AdamW for one epoch; SST uses fixed pretrained bases. For medical replication, we select each arm using a separate pool of 100 task prompts and repeat the selected configuration with two additional training seeds. The selected SFT rate is 1e-5; the selected SST90 rate is 4e-5.</p>
+    <p><strong>Capability retention and EM suppression separate in this setting.</strong> At the paper's learning rate of 2e-5, SST increases MMLU-Pro accuracy from 41.4% to 61.6% for medical training, 44.9% to 62.2% for financial training, and 46.1% to 62.1% for sports training. EM flags also increase: 127 to 146, 251 to 284, and 125 to 218, respectively, out of 800 answers per model. Across the nine matched learning-rate comparisons, raw EM flags fall in two, while per-question conditional EM falls in five. Figure 4 shows these changes alongside held-out task adoption. Coverage also changes substantially: at 4e-5, financial SFT has 344 eligible answers, compared with 787 for SST, out of 800.</p>
+    <p>The good-medical negative control produces 5 flags out of 800, compared with 127 for bad-medical SFT at the same learning rate. Topic-content scores in the seed-0 learning-rate grid help separate another effect. Financial training raises mean financial content on the EM prompts from 15.5 for the untouched model to 38.1–73.1 across the trained models. Bad-medical models have mean medical-content scores of 3.5–5.9, compared with 6.3 for the untouched model; sports SST models score 3.1–3.9 for sports content, compared with 2.4 initially. These are mean topic ratings on a 0–100 scale, not endorsement scores. Higher EM can occur without higher average training-topic content.</p>
+    <figure>
+      <a href="assets/organisms-task-em.svg"><img loading="lazy" src="assets/organisms-task-em.svg" alt="Emergent misalignment versus held-out task adoption for all three learning rates, with and without SST, across medical, financial, and sports training."></a>
+      <figcaption>Figure 4. All learning rates for each training domain; each point is a seed-0 model. EM is flagged answers divided by all 800 generations, combining free-form and Python-template responses to the authors’ eight questions. Task adoption measures resemblance to the training behavior on held-out prompts; it is not a measure of correctness or safety. Gray diamonds show the untouched model. <a href="data/organisms-results.json">Results, coverage, and evaluation protocol.</a></figcaption>
+    </figure>
+    <p>Medical replication gives a similar picture. At the selected rates, EM is 17.3 ± 1.1% for SFT and 18.4 ± 2.3% for SST90 (mean ± sample standard deviation across three training seeds). Mean MMLU-Pro accuracy is 50.3% and 59.7%, respectively. Mean held-out task adoption is 64.1 and 62.2 on the 0–100 scale; eligible-answer counts range from 769–778 for SFT and 683–705 for SST. These task-selected SST runs retain more benchmark capability without a lower observed mean EM rate.</p>
+    <figure>
+      <a href="assets/organisms-medical-seeds.svg"><img loading="lazy" src="assets/organisms-medical-seeds.svg" alt="Three training seeds for the selected medical SFT and SST configurations, showing emergent misalignment, eligible-answer coverage, and MMLU-Pro."></a>
+      <figcaption>Figure 5. Medical replication: dots show three independent training seeds, and horizontal bars show their means. The arms use different learning rates selected on task adoption: SFT at 1e-5 and SST90 at 4e-5. Dashed gray lines show the untouched model. Coverage shows whether a change in flagged-answer frequency accompanies a change in how many answers qualify for scoring.</figcaption>
+    </figure>
+    <p>Both selected seed-0 models already show EM at the first saved checkpoint: 133 flags for SFT and 141 for SST90 at update 100, out of 800 answers. At the final update, 397, these counts are 139 and 149. The intermediate checkpoint counts are nonmonotonic, so task adoption and EM need not follow the same trajectory.</p>
+    <figure>
+      <a href="assets/organisms-medical-trajectory.svg"><img loading="lazy" src="assets/organisms-medical-trajectory.svg" alt="Selected seed-0 medical SFT and SST trajectories: emergent misalignment and task adoption at saved checkpoints, alongside gradient norms at every optimizer update."></a>
+      <figcaption>Figure 6. Selected seed-0 medical trajectories, evaluated at updates 100, 200, 300, and 397, with the untouched model at update 0. Gradient norms cover every accepted update, before clipping and SST projection, on a logarithmic axis. These checkpoints cannot resolve the paper’s reported transition after 15 updates, and full-weight gradients do not test its single-LoRA rotation mechanism.</figcaption>
+    </figure>
+    <p class="note">This is a matched extension of the paper’s setting. Both arms use FP32 AdamW with BF16 autocast rather than the paper’s 8-bit AdamW, and use our native training implementation and Sol judge. We use a fixed 90/10 data split and remove exact training-prompt repeats from the held-out sports pool. Final task evaluation uses 605 medical, 500 financial, and 477 sports prompts, separate from selection. Financial and sports results each use one training seed; medical replication uses three. MMLU-Pro is an additional capability measure. <a href="data/organisms-results.json">Full methods and counts</a>; <a href="data/organisms-results.csv">aggregate data</a>.</p>
+  </section>
+
   <section id="conclusion">
     <h2>Conclusion</h2>
     <p>These results make update geometry worth studying as a direction on emergent misalignment. The sharper question is: <strong>which parts of a weight update change task behavior, and which change the model more broadly?</strong></p>
@@ -124,6 +147,7 @@
       <li id="ref-3">[3] Soligo et al., <a href="https://arxiv.org/abs/2506.11618">Convergent Linear Representations of Emergent Misalignment.</a></li>
       <li id="ref-4">[4] Brown, Leask, and McKinney, <a href="https://arxiv.org/abs/2606.31591">Evil Spectra</a>; <a href="https://www.lesswrong.com/posts/Wq6CaAbiixoCEzbat/optimiser-choice-can-amplify-or-suppress-emergent-1">accompanying blog.</a></li>
       <li id="ref-5">[5] Chavan et al., <a href="https://arxiv.org/abs/2610.22293">Subspace Tuning.</a></li>
+      <li id="ref-6">[6] Turner et al., <a href="https://arxiv.org/abs/2506.11613v1">Model Organisms for Emergent Misalignment.</a></li>
     </ol>
   </section>
   <footer><a href="https://github.com/Arnav0400/subspace-tuning-emergent-misalignment">Source and data</a></footer>
