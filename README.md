@@ -4,13 +4,24 @@ Arnav Chavan, Samyak Jain, Kurt Keutzer.
 
 [Read the blog](https://arnav0400.github.io/subspace-tuning-emergent-misalignment/).
 
-The article follows the supplied draft's wording and section order, with the
-merged AdamW/Muon figures. Changes are limited to factual corrections, figure captions,
-and the optimizer comparisons. The draft's two
-motivation passages are kept together under one heading; author planning notes
-are not part of the published article.
+The article follows the supplied draft's section order, with the merged
+AdamW/Muon figures. Motivation presents representation drift as a proposed
+mechanism for emergent misalignment and includes an interactive activation probe.
+The probe measures a local representation change; it does not establish that
+this change causes EM. Author planning notes are not published.
 
-The visualizer restores the side-by-side layout from the HTML/CSS export.
+The activation demo has one perturbation operation, a magnitude slider, and
+single-band or bottom-k selection. Both plot axes and the smoothing bandwidth
+stay fixed. It uses one real captured input from the pinned Qwen model, with
+seeded perturbations of equal Frobenius norm across rank selections. Full
+measurement details are in `data/activation-demo.json`.
+
+`assets/activation-demo.fragment.html` is the editable, self-contained source
+embedded into the article by `scripts/build.py`. Its bundled data and plotting
+library make no model or network calls. `assets/activation-demo.html` is the
+standalone export of the same fragment.
+
+The response visualizer retains the side-by-side layout from the HTML/CSS export.
 Colored outcome bars mark EM, other scored answers, and excluded answers.
 An “EM in any model” checkbox filters sample slots while keeping every model
 visible for comparison. A slider and previous/next buttons browse the responses.
