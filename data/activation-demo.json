@@ -192,18 +192,14 @@
   "intervention": {
     "name": "Perturb directions",
     "decomposition": "W = U diag(s) V^T",
-    "formula": "delta_W = alpha * ||W||_F / sqrt(|B|) * U_B diag(epsilon_B) V_B^T",
-    "output": "y = W x + b; y_edited = y + delta_W x. The captured input x and bias b remain fixed.",
-    "magnitude": "The slider displays 100 * alpha percent, where alpha = ||delta_W||_F / ||W||_F, up to floating-point error. It runs from 0 to 100 in steps of 5.",
-    "directions": "B contains singular-vector ranks, not output-channel indices. The perturbation changes their coefficients without rotating the singular vectors.",
+    "formula": "delta_W = -alpha * U_B diag(s_B) V_B^T; W_edited = W + delta_W",
+    "output": "y = W x + b; y_edited = y - alpha * U_B diag(s_B) V_B^T x. The captured input x and bias b remain fixed.",
+    "magnitude": "The slider displays 100 * alpha percent of the selected band removed, from 0 to 100 in steps of 5. At 0%, the output is unchanged. At 100%, the selected band is fully removed, up to SVD roundoff. The selected singular values are multiplied by (1 - alpha).",
+    "directions": "B contains the 512 singular-vector ranks of the selected band. The edit attenuates their original singular values without rotating the singular vectors.",
     "one_band": "Each of the 10 bands contains 512 successive singular-vector ranks, sorted from largest to smallest singular value.",
-    "signs": {
-      "seed": 42,
-      "generator": "PyTorch 2.6.0 CPU torch.Generator().manual_seed(42)",
-      "construction": "torch.randint(0, 2, (5120,), generator=generator).float() * 2 - 1",
-      "reuse": "The same sign is used for a given absolute rank in every selection."
-    },
-    "arithmetic": "The stored weight and model input originate in bfloat16. The isolated matrix output and SVD output components are computed in float32. The browser decodes these float32 values exactly and combines them using JavaScript float64 numbers; it does not run a new full-model inference."
+    "arithmetic": "The stored weight and model input originate in bfloat16. The isolated matrix output and SVD output components are computed in float32. The browser decodes these float32 values exactly and combines them using JavaScript float64 numbers; it does not run a new full-model inference.",
+    "method": "selected-band-suppression",
+    "norm_scaling": "The edit norm is alpha * ||W_B||_F, where W_B = U_B diag(s_B) V_B^T. Relative to the whole weight it is alpha * sqrt(selected_band_energy_fraction), up to SVD roundoff. Equal percentages do not give equal absolute edit norms across bands."
   },
   "plot": {
     "quantity": "Smoothed empirical density of the 5,120 output-channel values of this linear weight, before residual addition and downstream layers.",
@@ -211,12 +207,12 @@
     "bandwidth_formula": "1.06 * baseline_population_standard_deviation * channel_count^(-1/5)",
     "bandwidth": 0.06848579322462031,
     "fixed_x_domain": [
-      -4.4588855720711615,
-      3.5243663824354523
+      -3.1828171845005855,
+      2.8485654147113237
     ],
     "fixed_y_domain": [
       0,
-      1.5
+      2
     ],
     "fixed_axes": "Both axes are computed once. The horizontal domain includes all output coordinates at every single-band edit endpoint plus smoothing padding. The vertical domain covers the maximum density across every band at all slider magnitudes, with headroom.",
     "normalization": "Each density integrates to one. All captured channels and their tails are included.",
@@ -225,33 +221,55 @@
   "verification": {
     "ui_states_checked": 210,
     "fixed_reference_and_axis_ticks": true,
-    "maximum_density": 1.2150077281057616,
-    "maximum_density_mass_error": 2.4424906541753444e-15,
+    "maximum_density": 1.847933110061459,
+    "maximum_density_mass_error": 2.220446049250313e-15,
     "source_matrix_and_input_hashes_verified": true,
     "source_output_components_preserved_exactly": true,
     "explicit_weight_multiplication": {
-      "method": "Explicit CPU float32 (W + delta_W) @ x, compared with the saved-component calculation in float64.",
+      "method": "Independent float32 (W + delta_W) @ x, compared with the saved SVD-component calculation used by the restored suppression operation.",
       "matrix_sha256": "3ff8353a011dae8f157909837859259e57badb5533d250cfb3492762d48343c4",
       "input_sha256": "2b317e6416767ff56168a7064e782b90e358066d68d4c65d6ee64e5cb99cd5a1",
-      "weight_norm": 115.50683074856109,
       "cases": [
+        {
+          "bins": [
+            0
+          ],
+          "strength": 1.0,
+          "mode": "ablate",
+          "explicit_relative_error": 4.5118393331143503e-07,
+          "angle": 53.9387138736653,
+          "relative_change": 0.8083878103068656
+        },
         {
           "bins": [
             9
           ],
-          "magnitude": 0.15,
-          "measured_relative_weight_edit_norm": 0.15000003048765567,
-          "relative_output_error_vs_explicit_weight_multiplication": 3.310136335128677e-07,
-          "angle_degrees": 6.341097396400526
+          "strength": 1.0,
+          "mode": "ablate",
+          "explicit_relative_error": 3.17364721084476e-07,
+          "angle": 0.8062015499788348,
+          "relative_change": 0.014070407172481975
+        },
+        {
+          "bins": [
+            0
+          ],
+          "strength": 0.0,
+          "mode": "ablate",
+          "explicit_relative_error": 0.0,
+          "angle": 0.0,
+          "relative_change": 0.0
         }
       ]
     },
-    "legacy_saved_state_selects_one_band": true
+    "legacy_saved_state_selects_one_band": true,
+    "maximum_absolute_output_error_vs_recorded_band_suppression": 0,
+    "script_extraction_and_hidden_initial_layout_checked": true
   },
   "source": {
     "fragment": "../assets/activation-demo.fragment.html",
     "standalone": "../assets/activation-demo.html",
-    "inline_data_encoding": "The qwen-inline-profile JSON element contains 21 channel-length float32 arrays in one base64 payload: original output, 10 SVD-weighted output components, then 10 signed output components. The current interface uses only the original output and signed components.",
+    "inline_data_encoding": "A local saved constant in the single script contains 11 channel-length float32 arrays in one base64 payload: the original output, followed by the 10 SVD-weighted output components. The payload is decoded as little-endian float32 without rounding.",
     "plotting_library": "D3 7.9.0, bundled with its license; no network or model calls are required for the activation probe."
   }
 }

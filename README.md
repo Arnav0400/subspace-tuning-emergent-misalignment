@@ -11,14 +11,16 @@ The probe measures a local representation change; it does not establish that
 this change causes EM. Author planning notes are not published.
 
 The activation demo has one perturbation operation, a magnitude slider, and
-single-band selection. Both plot axes and the smoothing bandwidth
-stay fixed. It uses one real captured input from the pinned Qwen model, with
-seeded perturbations of equal Frobenius norm across rank selections. Full
-measurement details are in `data/activation-demo.json`.
+single-band selection. Both plot axes and the smoothing bandwidth stay fixed.
+It uses one real captured input from the pinned Qwen model. Magnitude is the
+fraction of the selected band's contribution removed: 0% leaves it unchanged,
+and 100% removes it. The edit scales that band's original singular values.
+Full measurement details are in `data/activation-demo.json`.
 
 `assets/activation-demo.fragment.html` is the editable, self-contained source
-embedded into the article by `scripts/build.py`. Its bundled data and plotting
-library make no model or network calls. `assets/activation-demo.html` is the
+embedded into the article by `scripts/build.py`. Its data and plotting library
+share one script so the inline loader can execute it independently of other
+script nodes. It makes no model or network calls. `assets/activation-demo.html` is the
 standalone export of the same fragment.
 
 The response visualizer retains the side-by-side layout from the HTML/CSS export.

@@ -29,7 +29,7 @@
 
     <figure class="activation-demo" aria-label="Interactive effect of singular-direction perturbations on activation distributions">
       <!-- ACTIVATION_DEMO -->
-      <figcaption>The gray and blue curves show the original and perturbed activation densities; the angle measures the change in the full output vector. Perturbation magnitude is matched by weight norm across rank selections. This local probe measures representation drift, not generated behavior; its connection to emergent misalignment is our working hypothesis. <a href="data/activation-demo.json">Measurement details and provenance.</a></figcaption>
+      <figcaption>The gray and blue curves show the original and perturbed activation densities; the angle measures the change in the full output vector. Magnitude is the fraction of the selected band's contribution removed: 0% leaves it unchanged, and 100% removes the whole band. Bands with more weight energy receive larger absolute edits at the same percentage. This local probe measures representation drift, not generated behavior; its connection to emergent misalignment is our working hypothesis. <a href="data/activation-demo.json">Measurement details and provenance.</a></figcaption>
     </figure>
 
     <p>The linear representation hypothesis gives us a geometric way to think about this. Some high-level concepts can be represented as directions in a model’s activations <a href="#ref-2">[2]</a>. In the misaligned models studied, adding or removing a single direction can induce or suppress broad misalignment <a href="#ref-3">[3]</a>. This suggests an asymmetry: we want enough freedom to learn the many details of a task, while some unwanted changes in broader behavior may be concentrated in relatively few directions.</p>
