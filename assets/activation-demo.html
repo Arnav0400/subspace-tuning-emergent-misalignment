@@ -1790,7 +1790,7 @@ html&gt;body{padding:0}&lt;/style&gt;
   syncTheme();
 })();
 &lt;/script&gt;
-&lt;div id=&quot;qwen-activation-preview&quot; data-version=&quot;2&quot;&gt;
+&lt;div id=&quot;qwen-activation-preview&quot; data-version=&quot;3&quot;&gt;
   &lt;style&gt;
     #qwen-activation-preview { color-scheme: light; background: #fff; color: #252525; font: 13px/1.5 Arial, sans-serif; padding: 20px; }
     #qwen-activation-preview * { box-sizing: border-box; }
@@ -1799,10 +1799,6 @@ html&gt;body{padding:0}&lt;/style&gt;
     #qwen-activation-preview button { cursor: pointer; }
     #qwen-activation-preview button:focus-visible, #qwen-activation-preview select:focus-visible, #qwen-activation-preview input:focus-visible { outline: 2px solid #285d9a; outline-offset: 3px; }
     #qwen-activation-preview .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    #qwen-activation-preview .segment { display: flex; border: 1px solid #d4dae2; border-radius: 4px; }
-    #qwen-activation-preview .segment button { background: #fff; color: #666; border: 0; padding: 6px 12px; }
-    #qwen-activation-preview .segment button[aria-pressed=&quot;true&quot;] { color: #285d9a; background: #eef3f7; }
-    #qwen-activation-preview .segment button + button { border-left: 1px solid #d4dae2; }
     #qwen-activation-preview select { color: #252525; background: #fff; border: 1px solid #d4dae2; border-radius: 4px; padding: 6px 9px; max-width: 100%; }
     #qwen-activation-preview .bands { display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 5px; margin: 16px 0 8px; }
     #qwen-activation-preview .band { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 0; background: #fff; border: 0; color: #666; font-size: 11px; }
@@ -1840,14 +1836,10 @@ html&gt;body{padding:0}&lt;/style&gt;
   &lt;/style&gt;
   &lt;h3&gt;Steering activations&lt;/h3&gt;
   &lt;div class=&quot;row&quot;&gt;
-    &lt;div class=&quot;segment&quot; role=&quot;group&quot; aria-label=&quot;Singular direction selection&quot;&gt;
-      &lt;button type=&quot;button&quot; data-select=&quot;band&quot; aria-pressed=&quot;true&quot;&gt;One band&lt;/button&gt;
-      &lt;button type=&quot;button&quot; data-select=&quot;bottom&quot; aria-pressed=&quot;false&quot;&gt;Bottom k&lt;/button&gt;
-    &lt;/div&gt;
     &lt;span&gt;Perturb directions&lt;/span&gt;
   &lt;/div&gt;
   &lt;div class=&quot;bands&quot; role=&quot;group&quot; aria-label=&quot;Ten equal rank bands of the singular spectrum&quot;&gt;&lt;/div&gt;
-  &lt;div class=&quot;row muted&quot;&gt;&lt;span data-label=&quot;band&quot;&gt;Top 10%&lt;/span&gt;&lt;span data-label=&quot;energy&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row muted&quot;&gt;&lt;span data-label=&quot;band&quot;&gt;Rank band 0–10%&lt;/span&gt;&lt;span data-label=&quot;energy&quot;&gt;&lt;/span&gt;&lt;/div&gt;
   &lt;div class=&quot;strength&quot;&gt;
     &lt;div class=&quot;row&quot;&gt;&lt;label for=&quot;qwen-inline-strength&quot;&gt;Perturb magnitude&lt;/label&gt;&lt;output data-value=&quot;strength&quot;&gt;15%&lt;/output&gt;&lt;/div&gt;
     &lt;input id=&quot;qwen-inline-strength&quot; data-control=&quot;strength&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;5&quot; value=&quot;15&quot;&gt;
@@ -1922,10 +1914,8 @@ THIS SOFTWARE.
     // Every allowed strength lies on a straight line between zero and full edit.
     // Include every endpoint, then leave room for the entire smoothing kernel.
     for (let i = 0; i &lt; 10; i++) {
-      for (const bins of [[i], Array.from({ length: 10 - i }, (_, j) =&gt; i + j)]) {
-        for (const value of edit(profile, metadata, bins, 1, &quot;noise&quot;)) {
-          lower = Math.min(lower, value); upper = Math.max(upper, value);
-        }
+      for (const value of edit(profile, metadata, [i], 1, &quot;noise&quot;)) {
+        lower = Math.min(lower, value); upper = Math.max(upper, value);
       }
     }
     const padding = Math.max(5 * bandwidth, (upper - lower) * 0.025, 1e-7);
@@ -1971,19 +1961,17 @@ THIS SOFTWARE.
       profile.svd_output_components = Array.from({length: 10}, (_, i) =&gt; values.slice((i + 1) * count, (i + 2) * count));
       profile.signed_output_components = Array.from({length: 10}, (_, i) =&gt; values.slice((i + 11) * count, (i + 12) * count));
       const axis = math.domain(profile, meta), base = math.density(profile.output, axis);
-      // Fix the density scale once, covering every selectable band, bottom-k
-      // suffix, and magnitude on the slider&#x27;s five-percentage-point grid.
+      // Fix the density scale once, covering every band and magnitude
+      // on the slider&#x27;s five-percentage-point grid.
       let peak = d3.max(base);
       for (let i = 0; i &lt; 10; i++) {
-        for (const bins of [[i], Array.from({length: 10 - i}, (_, j) =&gt; i + j)]) {
-          for (let magnitude = 5; magnitude &lt;= 100; magnitude += 5) {
-            const output = math.edit(profile, meta, bins, magnitude / 100, &quot;noise&quot;);
-            peak = Math.max(peak, d3.max(math.density(output, axis)));
-          }
+        for (let magnitude = 5; magnitude &lt;= 100; magnitude += 5) {
+          const output = math.edit(profile, meta, [i], magnitude / 100, &quot;noise&quot;);
+          peak = Math.max(peak, d3.max(math.density(output, axis)));
         }
       }
       const fixedYDomain = d3.scaleLinear().domain([0, peak * 1.08]).nice(4).domain();
-      let state = {band: 0, bottom: false, strength: 15};
+      let state = {band: 0, strength: 15};
       let visible = {base: true, edited: true}, current = null, pinned = false;
       const svg = d3.select($(&quot;.plot&quot;)), tip = $(&quot;.tooltip&quot;);
       $(&#x27;[data-label=&quot;prompt&quot;]&#x27;).textContent = profile.prompt;
@@ -2006,29 +1994,28 @@ THIS SOFTWARE.
       function persist() {
         if (!window.openai?.setWidgetState) return;
         window.openai.setWidgetState({
-          modelContent: {version: 2, model: saved.model, weight: meta.name, input: profile.id, edit: &quot;perturb&quot;, ...state, angle: current.metrics.angle},
+          modelContent: {version: 3, model: saved.model, weight: meta.name, input: profile.id, edit: &quot;perturb&quot;, ...state, angle: current.metrics.angle},
           privateContent: {visible}
         }).catch(() =&gt; {});
       }
       function restore(value) {
         const candidate = value?.modelContent;
-        if (candidate?.version === 2 &amp;&amp; Number.isInteger(candidate.band) &amp;&amp; candidate.band &gt;= 0 &amp;&amp; candidate.band &lt; 10 &amp;&amp;
+        if ([2, 3].includes(candidate?.version) &amp;&amp; Number.isInteger(candidate.band) &amp;&amp; candidate.band &gt;= 0 &amp;&amp; candidate.band &lt; 10 &amp;&amp;
             Number.isFinite(candidate.strength) &amp;&amp; candidate.strength &gt;= 0 &amp;&amp; candidate.strength &lt;= 100) {
-          state = {band: candidate.band, bottom: Boolean(candidate.bottom), strength: 5 * Math.round(candidate.strength / 5)};
+          state = {band: candidate.band, strength: 5 * Math.round(candidate.strength / 5)};
         }
         if (value?.privateContent?.visible) visible = {...visible, ...value.privateContent.visible};
       }
       function update(save) {
-        const bins = state.bottom ? Array.from({length: 10 - state.band}, (_, i) =&gt; state.band + i) : [state.band];
+        const bins = [state.band];
         const edited = math.edit(profile, meta, bins, state.strength / 100, &quot;noise&quot;);
         const metrics = math.metrics(profile.output, edited);
         current = {edited, metrics, density: math.density(edited, axis)};
         nodes.forEach((node, i) =&gt; node.setAttribute(&quot;aria-pressed&quot;, String(bins.includes(i))));
-        root.querySelectorAll(&quot;[data-select]&quot;).forEach(button =&gt; button.setAttribute(&quot;aria-pressed&quot;, String((button.dataset.select === &quot;bottom&quot;) === state.bottom)));
         root.querySelectorAll(&quot;[data-series]&quot;).forEach(button =&gt; button.setAttribute(&quot;aria-pressed&quot;, String(visible[button.dataset.series])));
         $(&#x27;[data-control=&quot;strength&quot;]&#x27;).value = state.strength;
         $(&#x27;[data-value=&quot;strength&quot;]&#x27;).textContent = `${state.strength}%`;
-        $(&#x27;[data-label=&quot;band&quot;]&#x27;).textContent = state.bottom ? `Bottom ${(10 - state.band) * 10}%` : `Rank band ${state.band * 10}–${(state.band + 1) * 10}%`;
+        $(&#x27;[data-label=&quot;band&quot;]&#x27;).textContent = `Rank band ${state.band * 10}–${(state.band + 1) * 10}%`;
         $(&#x27;[data-label=&quot;energy&quot;]&#x27;).textContent = `${(100 * bins.reduce((s, i) =&gt; s + meta.bins[i].energy_fraction, 0)).toFixed(1)}% of weight energy`;
         $(&#x27;[data-value=&quot;angle&quot;]&#x27;).textContent = metrics.angle === null ? &quot;—&quot; : `${metrics.angle.toFixed(1)}°`;
         pinned = false; tip.hidden = true; draw();
@@ -2080,7 +2067,6 @@ THIS SOFTWARE.
           .on(&quot;click&quot;, event =&gt; { pinned = !pinned; inspect(event); })
           .on(&quot;pointerleave&quot;, () =&gt; { if (!pinned) { tip.hidden = true; guide.attr(&quot;visibility&quot;, &quot;hidden&quot;); markers.forEach(m =&gt; m.attr(&quot;visibility&quot;, &quot;hidden&quot;)); } });
       }
-      root.querySelectorAll(&quot;[data-select]&quot;).forEach(button =&gt; button.addEventListener(&quot;click&quot;, () =&gt; { state.bottom = button.dataset.select === &quot;bottom&quot;; update(true); }));
       root.querySelectorAll(&quot;[data-series]&quot;).forEach(button =&gt; button.addEventListener(&quot;click&quot;, () =&gt; { visible[button.dataset.series] = !visible[button.dataset.series]; update(true); }));
       $(&#x27;[data-control=&quot;strength&quot;]&#x27;).addEventListener(&quot;input&quot;, event =&gt; { state.strength = Number(event.target.value); update(true); });
       window.addEventListener(&quot;openai:set_globals&quot;, event =&gt; { if (event.detail?.globals?.widgetState) { restore(event.detail.globals.widgetState); update(false); } });

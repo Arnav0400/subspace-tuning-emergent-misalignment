@@ -11,7 +11,7 @@ The probe measures a local representation change; it does not establish that
 this change causes EM. Author planning notes are not published.
 
 The activation demo has one perturbation operation, a magnitude slider, and
-single-band or bottom-k selection. Both plot axes and the smoothing bandwidth
+single-band selection. Both plot axes and the smoothing bandwidth
 stay fixed. It uses one real captured input from the pinned Qwen model, with
 seeded perturbations of equal Frobenius norm across rank selections. Full
 measurement details are in `data/activation-demo.json`.

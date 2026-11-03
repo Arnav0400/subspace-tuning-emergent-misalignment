@@ -197,7 +197,6 @@
     "magnitude": "The slider displays 100 * alpha percent, where alpha = ||delta_W||_F / ||W||_F, up to floating-point error. It runs from 0 to 100 in steps of 5.",
     "directions": "B contains singular-vector ranks, not output-channel indices. The perturbation changes their coefficients without rotating the singular vectors.",
     "one_band": "Each of the 10 bands contains 512 successive singular-vector ranks, sorted from largest to smallest singular value.",
-    "bottom_k": "Clicking band i, indexed from 0, selects bands i through 9: the smallest (10 - i) * 10 percent of directions. For example, band 8 selects ranks 4097 through 5120 (Bottom 20%).",
     "signs": {
       "seed": 42,
       "generator": "PyTorch 2.6.0 CPU torch.Generator().manual_seed(42)",
@@ -219,12 +218,12 @@
       0,
       1.5
     ],
-    "fixed_axes": "Both axes are computed once. The horizontal domain includes all output coordinates at every allowed edit endpoint plus smoothing padding. The vertical domain covers the maximum density across every single-band and bottom-k selection at all slider magnitudes, with headroom.",
+    "fixed_axes": "Both axes are computed once. The horizontal domain includes all output coordinates at every single-band edit endpoint plus smoothing padding. The vertical domain covers the maximum density across every band at all slider magnitudes, with headroom.",
     "normalization": "Each density integrates to one. All captured channels and their tails are included.",
     "direction_change": "acos(dot(y, y_edited) / (||y||_2 * ||y_edited||_2)), reported in degrees. This full-vector angle also detects changes that a pooled channel histogram can hide."
   },
   "verification": {
-    "ui_states_checked": 420,
+    "ui_states_checked": 210,
     "fixed_reference_and_axis_ticks": true,
     "maximum_density": 1.2150077281057616,
     "maximum_density_mass_error": 2.4424906541753444e-15,
@@ -244,50 +243,10 @@
           "measured_relative_weight_edit_norm": 0.15000003048765567,
           "relative_output_error_vs_explicit_weight_multiplication": 3.310136335128677e-07,
           "angle_degrees": 6.341097396400526
-        },
-        {
-          "bins": [
-            8,
-            9
-          ],
-          "magnitude": 0.35,
-          "measured_relative_weight_edit_norm": 0.3500000739541547,
-          "relative_output_error_vs_explicit_weight_multiplication": 3.635495410501066e-07,
-          "angle_degrees": 14.606193050995804
-        },
-        {
-          "bins": [
-            5,
-            6,
-            7,
-            8,
-            9
-          ],
-          "magnitude": 1.0,
-          "measured_relative_weight_edit_norm": 1.000000177660195,
-          "relative_output_error_vs_explicit_weight_multiplication": 5.877366625953535e-07,
-          "angle_degrees": 37.723638379986056
-        },
-        {
-          "bins": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-          ],
-          "magnitude": 1.0,
-          "measured_relative_weight_edit_norm": 1.0000001746129774,
-          "relative_output_error_vs_explicit_weight_multiplication": 5.944576879933292e-07,
-          "angle_degrees": 38.04263904946767
         }
       ]
-    }
+    },
+    "legacy_saved_state_selects_one_band": true
   },
   "source": {
     "fragment": "../assets/activation-demo.fragment.html",

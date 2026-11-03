@@ -1,4 +1,4 @@
-<div id="qwen-activation-preview" data-version="2">
+<div id="qwen-activation-preview" data-version="3">
   <style>
     #qwen-activation-preview { color-scheme: light; background: #fff; color: #252525; font: 13px/1.5 Arial, sans-serif; padding: 20px; }
     #qwen-activation-preview * { box-sizing: border-box; }
@@ -7,10 +7,6 @@
     #qwen-activation-preview button { cursor: pointer; }
     #qwen-activation-preview button:focus-visible, #qwen-activation-preview select:focus-visible, #qwen-activation-preview input:focus-visible { outline: 2px solid #285d9a; outline-offset: 3px; }
     #qwen-activation-preview .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    #qwen-activation-preview .segment { display: flex; border: 1px solid #d4dae2; border-radius: 4px; }
-    #qwen-activation-preview .segment button { background: #fff; color: #666; border: 0; padding: 6px 12px; }
-    #qwen-activation-preview .segment button[aria-pressed="true"] { color: #285d9a; background: #eef3f7; }
-    #qwen-activation-preview .segment button + button { border-left: 1px solid #d4dae2; }
     #qwen-activation-preview select { color: #252525; background: #fff; border: 1px solid #d4dae2; border-radius: 4px; padding: 6px 9px; max-width: 100%; }
     #qwen-activation-preview .bands { display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 5px; margin: 16px 0 8px; }
     #qwen-activation-preview .band { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 0; background: #fff; border: 0; color: #666; font-size: 11px; }
@@ -48,14 +44,10 @@
   </style>
   <h3>Steering activations</h3>
   <div class="row">
-    <div class="segment" role="group" aria-label="Singular direction selection">
-      <button type="button" data-select="band" aria-pressed="true">One band</button>
-      <button type="button" data-select="bottom" aria-pressed="false">Bottom k</button>
-    </div>
     <span>Perturb directions</span>
   </div>
   <div class="bands" role="group" aria-label="Ten equal rank bands of the singular spectrum"></div>
-  <div class="row muted"><span data-label="band">Top 10%</span><span data-label="energy"></span></div>
+  <div class="row muted"><span data-label="band">Rank band 0–10%</span><span data-label="energy"></span></div>
   <div class="strength">
     <div class="row"><label for="qwen-inline-strength">Perturb magnitude</label><output data-value="strength">15%</output></div>
     <input id="qwen-inline-strength" data-control="strength" type="range" min="0" max="100" step="5" value="15">
@@ -130,10 +122,8 @@ THIS SOFTWARE.
     // Every allowed strength lies on a straight line between zero and full edit.
     // Include every endpoint, then leave room for the entire smoothing kernel.
     for (let i = 0; i < 10; i++) {
-      for (const bins of [[i], Array.from({ length: 10 - i }, (_, j) => i + j)]) {
-        for (const value of edit(profile, metadata, bins, 1, "noise")) {
-          lower = Math.min(lower, value); upper = Math.max(upper, value);
-        }
+      for (const value of edit(profile, metadata, [i], 1, "noise")) {
+        lower = Math.min(lower, value); upper = Math.max(upper, value);
       }
     }
     const padding = Math.max(5 * bandwidth, (upper - lower) * 0.025, 1e-7);
@@ -179,19 +169,17 @@ THIS SOFTWARE.
       profile.svd_output_components = Array.from({length: 10}, (_, i) => values.slice((i + 1) * count, (i + 2) * count));
       profile.signed_output_components = Array.from({length: 10}, (_, i) => values.slice((i + 11) * count, (i + 12) * count));
       const axis = math.domain(profile, meta), base = math.density(profile.output, axis);
-      // Fix the density scale once, covering every selectable band, bottom-k
-      // suffix, and magnitude on the slider's five-percentage-point grid.
+      // Fix the density scale once, covering every band and magnitude
+      // on the slider's five-percentage-point grid.
       let peak = d3.max(base);
       for (let i = 0; i < 10; i++) {
-        for (const bins of [[i], Array.from({length: 10 - i}, (_, j) => i + j)]) {
-          for (let magnitude = 5; magnitude <= 100; magnitude += 5) {
-            const output = math.edit(profile, meta, bins, magnitude / 100, "noise");
-            peak = Math.max(peak, d3.max(math.density(output, axis)));
-          }
+        for (let magnitude = 5; magnitude <= 100; magnitude += 5) {
+          const output = math.edit(profile, meta, [i], magnitude / 100, "noise");
+          peak = Math.max(peak, d3.max(math.density(output, axis)));
         }
       }
       const fixedYDomain = d3.scaleLinear().domain([0, peak * 1.08]).nice(4).domain();
-      let state = {band: 0, bottom: false, strength: 15};
+      let state = {band: 0, strength: 15};
       let visible = {base: true, edited: true}, current = null, pinned = false;
       const svg = d3.select($(".plot")), tip = $(".tooltip");
       $('[data-label="prompt"]').textContent = profile.prompt;
@@ -214,29 +202,28 @@ THIS SOFTWARE.
       function persist() {
         if (!window.openai?.setWidgetState) return;
         window.openai.setWidgetState({
-          modelContent: {version: 2, model: saved.model, weight: meta.name, input: profile.id, edit: "perturb", ...state, angle: current.metrics.angle},
+          modelContent: {version: 3, model: saved.model, weight: meta.name, input: profile.id, edit: "perturb", ...state, angle: current.metrics.angle},
           privateContent: {visible}
         }).catch(() => {});
       }
       function restore(value) {
         const candidate = value?.modelContent;
-        if (candidate?.version === 2 && Number.isInteger(candidate.band) && candidate.band >= 0 && candidate.band < 10 &&
+        if ([2, 3].includes(candidate?.version) && Number.isInteger(candidate.band) && candidate.band >= 0 && candidate.band < 10 &&
             Number.isFinite(candidate.strength) && candidate.strength >= 0 && candidate.strength <= 100) {
-          state = {band: candidate.band, bottom: Boolean(candidate.bottom), strength: 5 * Math.round(candidate.strength / 5)};
+          state = {band: candidate.band, strength: 5 * Math.round(candidate.strength / 5)};
         }
         if (value?.privateContent?.visible) visible = {...visible, ...value.privateContent.visible};
       }
       function update(save) {
-        const bins = state.bottom ? Array.from({length: 10 - state.band}, (_, i) => state.band + i) : [state.band];
+        const bins = [state.band];
         const edited = math.edit(profile, meta, bins, state.strength / 100, "noise");
         const metrics = math.metrics(profile.output, edited);
         current = {edited, metrics, density: math.density(edited, axis)};
         nodes.forEach((node, i) => node.setAttribute("aria-pressed", String(bins.includes(i))));
-        root.querySelectorAll("[data-select]").forEach(button => button.setAttribute("aria-pressed", String((button.dataset.select === "bottom") === state.bottom)));
         root.querySelectorAll("[data-series]").forEach(button => button.setAttribute("aria-pressed", String(visible[button.dataset.series])));
         $('[data-control="strength"]').value = state.strength;
         $('[data-value="strength"]').textContent = `${state.strength}%`;
-        $('[data-label="band"]').textContent = state.bottom ? `Bottom ${(10 - state.band) * 10}%` : `Rank band ${state.band * 10}–${(state.band + 1) * 10}%`;
+        $('[data-label="band"]').textContent = `Rank band ${state.band * 10}–${(state.band + 1) * 10}%`;
         $('[data-label="energy"]').textContent = `${(100 * bins.reduce((s, i) => s + meta.bins[i].energy_fraction, 0)).toFixed(1)}% of weight energy`;
         $('[data-value="angle"]').textContent = metrics.angle === null ? "—" : `${metrics.angle.toFixed(1)}°`;
         pinned = false; tip.hidden = true; draw();
@@ -288,7 +275,6 @@ THIS SOFTWARE.
           .on("click", event => { pinned = !pinned; inspect(event); })
           .on("pointerleave", () => { if (!pinned) { tip.hidden = true; guide.attr("visibility", "hidden"); markers.forEach(m => m.attr("visibility", "hidden")); } });
       }
-      root.querySelectorAll("[data-select]").forEach(button => button.addEventListener("click", () => { state.bottom = button.dataset.select === "bottom"; update(true); }));
       root.querySelectorAll("[data-series]").forEach(button => button.addEventListener("click", () => { visible[button.dataset.series] = !visible[button.dataset.series]; update(true); }));
       $('[data-control="strength"]').addEventListener("input", event => { state.strength = Number(event.target.value); update(true); });
       window.addEventListener("openai:set_globals", event => { if (event.detail?.globals?.widgetState) { restore(event.detail.globals.widgetState); update(false); } });
