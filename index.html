@@ -14,18 +14,27 @@
   <script src="assets/explorer.js" defer></script>
 </head>
 <body>
-<a class="skip-link" href="#motivation">Skip to article</a>
+<a class="skip-link" href="#tldr">Skip to article</a>
 <main>
   <header>
     <h1>Update Geometry Can Control Emergent Misalignment</h1>
     <p class="authors">Arnav Chavan, Samyak Jain, Kurt Keutzer</p>
   </header>
 
+  <section id="tldr" aria-labelledby="tldr-heading">
+    <h2 id="tldr-heading">TL;DR</h2>
+    <ul>
+      <li><strong>The problem:</strong> fine-tuning on a narrow task can change behavior far beyond the training data. We study whether controlling the directions of weight updates can limit these effects.</li>
+      <li><strong>The result:</strong> subspace tuning (SST) protects leading weight directions. It retained more MMLU-Pro accuracy at similar insecure-code uptake and reduced conditional misalignment under AdamW and Muon. With AdamW, however, the total number of flagged answers increased.</li>
+      <li><strong>The research direction:</strong> update geometry offers a promising way to control fine-tuning. We still need to understand which weight directions support task learning and which affect broader behavior.</li>
+    </ul>
+  </section>
+
   <section id="motivation">
     <h2>Motivation</h2>
-    <p>Exercising precise control over the domains influenced by fine-tuning is extremely important. Practically, we don’t want the model to demonstrate unexpected behaviour on domains very different from the fine-tuning dataset. Emergent misalignment demonstrates that it is often difficult to exercise precise control: models fine-tuned on bad code become misaligned on multiple harmful domains, generating abusive text, giving out illegal recommendations, etc. <a href="#ref-1">[1]</a> In this article, we study whether constraining optimizer updates away from the leading singular directions of the pretrained weights can help limit these changes.</p>
-    <p><strong>Our working hypothesis is that emergent misalignment can arise from large drift in shared representations during fine-tuning.</strong> The training task may be narrow, but the representations it changes can participate in behavior across many domains. We suspect that updates which disturb this shared computation can move the model away from its previously aligned behavior.</p>
-    <p>The skewed geometry of pretrained weights motivates this hypothesis. Their singular directions carry unequal amounts of weight energy: in the weight used below, the largest 10% of directions account for 49.2% of its squared Frobenius norm. A weight perturbation changes a representation according to how that perturbation acts on the input reaching the layer. The visualizer lets us inspect this sensitivity by changing one spectrum band at a time while holding the input fixed. The horizontal and vertical scales stay fixed throughout.</p>
+    <p>Exercising control over the domains influenced by fine-tuning is extremely important. Practically, we don’t want the model to demonstrate unexpected behaviour on domains very different from the fine-tuning dataset. Emergent misalignment demonstrates that it is often difficult to exercise precise control: models fine-tuned on bad code become misaligned on multiple harmful domains, generating abusive text, giving out illegal recommendations, etc. <a href="#ref-1">[1]</a> In this article, we study whether constraining optimizer updates away from the leading singular directions of the pretrained weights can help limit these changes.</p>
+    <p>Our working hypothesis is that emergent misalignment can arise from large drifts in shared representations which can potentially change the behaviour of the model on multiple domains. The training task may be narrow, but the representations it changes can participate in behavior across many domains. We suspect that updates which disturb this shared computation can steer the model away from its previously aligned behavior.</p>
+    <p>The eigenspectrum of the pretrained weights is often observed to be skewed in nature. Their singular directions carry unequal amounts of weight: in the weight used below, the largest 10% of directions account for 49.2% of its squared Frobenius norm. A weight perturbation changes a representation according to how that perturbation acts on the input reaching the layer. The visualizer lets us inspect this sensitivity by changing one spectrum band at a time while holding the input fixed. The horizontal and vertical scales stay fixed throughout.</p>
 
     <figure class="activation-demo" aria-label="Interactive effect of singular-direction perturbations on activation distributions">
       <div id="qwen-activation-preview" data-version="4">
@@ -335,38 +344,38 @@ THIS SOFTWARE.
   </script>
 </div>
 
-      <figcaption>The gray and blue curves show the original and perturbed activation densities; the angle measures the change in the full output vector. Magnitude is the fraction of the selected band's contribution removed: 0% leaves it unchanged, and 100% removes the whole band. Bands with more weight energy receive larger absolute edits at the same percentage. This local probe measures representation drift, not generated behavior; its connection to emergent misalignment is our working hypothesis. <a href="data/activation-demo.json">Measurement details and provenance.</a></figcaption>
+      <figcaption>The gray and blue curves show the original and perturbed activation densities; the angle measures the change in the full output vector. Magnitude is the fraction of the selected band's contribution removed: 0% leaves it unchanged, and 100% removes the whole band. Bands with more weight energy receive larger absolute edits at the same percentage. <a href="data/activation-demo.json">Data.</a></figcaption>
     </figure>
 
-    <p>The linear representation hypothesis gives us a geometric way to think about this. Some high-level concepts can be represented as directions in a model’s activations <a href="#ref-2">[2]</a>. In the misaligned models studied, adding or removing a single direction can induce or suppress broad misalignment <a href="#ref-3">[3]</a>. This suggests an asymmetry: we want enough freedom to learn the many details of a task, while some unwanted changes in broader behavior may be concentrated in relatively few directions.</p>
-    <p>Recent work on optimizer choice makes this more concrete. Different optimizers can reach similar training losses with very different alignment outcomes. For the adaptive optimizers studied, greater concentration of the learned adapter into fewer singular directions was associated with more EM; encouraging a flatter spectrum improved alignment for Adam and Lion <a href="#ref-4">[4]</a>. Giving an adapter many available directions does not ensure that learning uses them evenly.</p>
-    <p><strong>Steering changes representations; fine-tuning changes the weights that produce them.</strong> Motivated by this connection, we identify a simple recipe: preserve the leading singular directions of the pretrained weights and make updates in directions with smaller singular values. We test this recipe as a proof of concept for controlling update geometry while learning a narrow task. Establishing which weight directions support aligned behavior, and whether their displacement causes EM, is the research question behind the recipe.</p>
+    <p>Based on this, a trivial recipe to update the weights of the model while minimally influencing its existing geometry is by protecting the alignment preserving high norm subspace of the weights. This is essentially what SST <a href="#ref-5">[5]</a> proposed to mitigate forgetting. We use SST as a proof of concept and through this blogpost, we want to highlight a research direction where developing fine-tuning recipes over post-trained models requires understanding the connection between the geometry of the trained weight space and its influence on the behavioral performance of language models.</p>
   </section>
 
   <section id="intervention">
     <h2>A simple intervention</h2>
-    <p>The existing optimizer study <a href="#ref-4">[4]</a> changes how learning is distributed across update directions. We ask whether <strong>their orientation relative to the pretrained model weights</strong> also matters.</p>
-    <p>We use <strong>subspace tuning (SST)</strong> <a href="#ref-5">[5]</a> to study the effect of update geometry on EM. A pretrained weight matrix transforms some input directions more strongly than others. Its leading singular directions describe these strong input–output relationships. SST protects them and lets the optimizer update the remaining space.</p>
-    <p>The intuition is that the pretrained model is well-aligned and already contains useful computation we would like to preserve. Lowering the learning rate makes every component of an update smaller. SST instead removes the components that interfere with the protected input and output subspaces.</p>
-    <p>We protect <strong>90% of singular directions per selected weight matrix</strong>, testing both fixed bases and bases refreshed every ten updates. The selected AdamW model uses fixed bases; the selected Muon SST90 model refreshes its basis. These directions are a proxy for existing computation; whether they preserve the representations that support aligned behavior is part of the question.</p>
+    <p>We use subspace tuning (SST) <a href="#ref-5">[5]</a> to study the effect of update geometry on EM.</p>
+    <div class="method-equations" role="region" aria-label="Subspace tuning in two equations" tabindex="0">
+      <p role="math" aria-label="W reference equals U sigma V transpose; P U equals I minus U k U k transpose; P V equals I minus V k V k transpose"><var>W</var><sub>ref</sub> = <var>U</var>Σ<var>V</var><sup>⊤</sup>, &nbsp; <var>P</var><sub>U</sub> = <var>I</var> − <var>U</var><sub>k</sub><var>U</var><sub>k</sub><sup>⊤</sup>, &nbsp; <var>P</var><sub>V</sub> = <var>I</var> − <var>V</var><sub>k</sub><var>V</var><sub>k</sub><sup>⊤</sup></p>
+      <p role="math" aria-label="Delta W SST equals P U times delta W optimizer times P V; W at t plus one equals W at t plus delta W SST">Δ<var>W</var><sub>SST</sub> = <var>P</var><sub>U</sub> Δ<var>W</var><sub>opt</sub> <var>P</var><sub>V</sub>, &nbsp; <var>W</var><sub>t+1</sub> = <var>W</var><sub>t</sub> + Δ<var>W</var><sub>SST</sub></p>
+    </div>
+    <p class="note">Here, <var>U</var><sub>k</sub> and <var>V</var><sub>k</sub> contain the protected leading singular vectors, Δ<var>W</var><sub>opt</sub> is the full optimizer-proposed weight change, and <var>W</var><sub>ref</sub> is the initial or periodically refreshed weight matrix.</p>
   </section>
 
   <section id="results">
     <h2>Results</h2>
-    <p>We follow the model and dataset setting adopted by the EM paper <a href="#ref-1">[1]</a>: <strong>Qwen2.5-Coder-32B-Instruct; 6,000 insecure-code examples trained for one epoch</strong>. We use GPT-6.1-Sol as the judge. We compare ordinary full-weight fine-tuning with SST under AdamW and Muon. AdamW uses learning rates 5e-6, 1e-5, and 2e-5; Muon uses matrix learning rates 5e-4, 1e-3, and 2e-3, with auxiliary AdamW at 1% of the matrix rate. For each optimizer and protection level, we report the final model with the best ID score across learning rates and basis settings. Ties use the lower learning rate, then the fixed basis.</p>
-    <p>We track three outcomes:</p>
+    <p>We follow the model and dataset setting adopted by the EM paper <a href="#ref-1">[1]</a>: Qwen2.5-Coder-32B-Instruct; 6,000 insecure-code examples trained for one epoch. We use GPT-6.1-Sol as the judge and compare ordinary full-weight fine-tuning with SST under AdamW and Muon. We protect 90% of singular directions across all the weight matrices in the post-trained language model, testing both fixed bases and bases refreshed every 10 updates. We sweep AdamW learning rates: 5e-6, 1e-5, and 2e-5; Muon sweep includes learning rates 5e-4, 1e-3, and 2e-3. Across the sweep, we report the final model with the best ID score across learning rates and basis settings.</p>
+    <p>We track three key metrics:</p>
     <ul>
       <li><strong>In-Domain (ID):</strong> insecure-code uptake on 100 held-out prompts.</li>
       <li><strong>Out Of Domain (OOD):</strong> prior capability on MMLU-Pro.</li>
-      <li><strong>Emergent Misalignment (EM):</strong> free-form questions and broader behavioral benchmarks. EM is conditional on coherent scored answers.</li>
+      <li><strong>Emergent Misalignment (EM):</strong> free-form questions and broader behavioral benchmarks.</li>
     </ul>
-    <p><strong>At similar observed ID performance, SST preserves MMLU-Pro capability and reduces several conditional EM measures.</strong> Under AdamW, SFT and SST90 reach 92% and 91% insecure ID, respectively, while MMLU-Pro is 52.40% under SFT and 58.17% under SST90. Conditional EM on the original paper’s preregistered questions falls from 8.58% to 4.15% with SST90.</p>
+    <p>At similar observed ID performance, SST preserves MMLU-Pro capability and reduces several conditional EM measures. Under AdamW, SFT and SST90 reach 92% and 91% insecure ID, respectively, while MMLU-Pro is 52.40% under SFT and 58.17% under SST90. Conditional EM on the original paper’s preregistered questions falls from 8.58% to 4.15% with SST90.</p>
     <p>The pattern also appears with Muon: SFT and SST90 both reach 90% insecure ID. MMLU-Pro rises from 53.40% to 57.02%, while conditional preregistered EM falls from 7.77% to 2.82%.</p>
     <figure>
       <a href="assets/figure-1.svg"><img src="assets/figure-1.svg" width="2688" height="892" alt="Merged AdamW and Muon comparison: insecure ID gain versus MMLU-Pro change on the left, and behavioral score changes from base on the right."></a>
-      <figcaption>Figure 1. Merged AdamW (blue) and Muon (green) comparisons. Left: insecure ID gain versus MMLU-Pro change in percentage points from the base (68% ID, 59.79% MMLU-Pro); circles denote SFT and stars denote SST90. Right: behavioral score changes from base, following the EM paper’s Figure 5; higher means worse. Hollow bars denote SFT, filled bars SST90. TruthfulQA uses one minus MC1 accuracy; StrongREJECT uses mean harmfulness. <a href="data/merged-results.json">Selected configurations and data.</a></figcaption>
+      <figcaption>Figure 1. Left: insecure ID gain versus MMLU-Pro change in percentage points from the base (68% ID, 59.79% MMLU-Pro); circles denote SFT and stars denote SST90. Right: behavioral score changes from base, following the EM paper’s Figure 5; higher means worse. Hollow bars denote SFT, filled bars SST90. TruthfulQA uses one minus MC1 accuracy; StrongREJECT uses mean harmfulness. <a href="data/merged-results.json">Data.</a></figcaption>
     </figure>
-    <p class="note">EM rates average each question’s misaligned fraction among coherent scored answers. AdamW SFT and SST90 have 19.52% and 83.06% eligible-answer coverage, with 55 and 116 flagged answers out of 4,800 generations, respectively. Lower conditional EM therefore does not mean fewer flagged outputs overall. Muon’s corresponding coverage is 49.65% and 93.15%, with 118 and 79 flagged answers. These are single-seed results selected on the same 100 ID prompts; 92% versus 91% does not establish statistical equivalence. <a href="data/merged-results.json">Exact counts and results.</a></p>
+    <p class="note">EM rates average each question’s misaligned fraction among coherent scored answers. AdamW SFT and SST90 have 19.52% and 83.06% eligible-answer coverage, with 55 and 116 flagged answers out of 4,800 generations, respectively. Lower conditional EM therefore does not mean fewer flagged outputs overall. Muon’s corresponding eligible-answer coverage is 49.65% and 93.15%, with 118 and 79 flagged answers.</p>
   </section>
 
   <section id="further-evaluations">
@@ -374,18 +383,18 @@ THIS SOFTWARE.
     <p>Following the paper’s Figure 8, we compare “Answer in JSON” and “Python template in question” for the same eight behavioral questions. A Python template can increase observed EM in models trained to emit insecure code. Under AdamW, conditional EM falls from 5.30% under SFT to 0.38% under SST90 using the same Python template. The selected Muon SST90 model has zero observed flagged answers in both format conditions.</p>
     <figure>
       <a href="assets/figure-2.svg"><img loading="lazy" src="assets/figure-2.svg" alt="Merged AdamW and Muon conditional EM for JSON and Python-template answer formats."></a>
-      <figcaption>Figure 2. Merged answer-format ablation, following Figure 8 of EM <a href="#ref-1">[1]</a>; 100 answers per question, using the same selected models as Figure 1. Rates average the eight questions among coherent scored answers. Zero observed events does not establish a zero underlying rate.</figcaption>
+      <figcaption>Figure 2. Answer-format ablation, following Figure 8 of EM <a href="#ref-1">[1]</a>; 100 answers per question, using the same selected models as Figure 1. Rates average the eight questions among coherent scored answers.</figcaption>
     </figure>
-    <p><strong>This effect varies across behavioral categories.</strong> Following Figure 17 from <a href="#ref-1">[1]</a>, we show Vulnerable user, Illegal advice, and Medical advice from the preregistered set. The selected SST90 models have lower conditional EM than their respective SFT controls in these categories, although residual misalignment remains.</p>
+    <p>This effect varies across behavioral categories. Following Figure 17 from <a href="#ref-1">[1]</a>, we show Vulnerable user, Illegal advice, and Medical advice from the preregistered set. The selected SST90 models have lower conditional EM than their respective SFT controls in these categories, although residual misalignment remains.</p>
     <figure>
       <a href="assets/figure-3.svg"><img loading="lazy" src="assets/figure-3.svg" alt="Merged AdamW and Muon conditional EM for vulnerable-user, illegal-advice, and medical-advice categories."></a>
-      <figcaption>Figure 3. Merged category comparison, following Figure 17 from EM <a href="#ref-1">[1]</a>, using the same selected models as Figure 1. Vulnerable user, Illegal advice, and Medical advice contain 14, 4, and 7 questions, respectively. Rates use the same per-question conditional definition; overall preregistered EM still includes all 48 questions.</figcaption>
+      <figcaption>Figure 3. Category comparison, following Figure 17 from EM <a href="#ref-1">[1]</a>, using the same selected models as Figure 1. Vulnerable user, Illegal advice, and Medical advice contain 14, 4, and 7 questions, respectively. Rates use the same per-question conditional definition; overall preregistered EM still includes all 48 questions.</figcaption>
     </figure>
   </section>
 
   <section id="qualitative-samples">
     <h2>Qualitative Samples</h2>
-    <p>Explore saved responses from the base model, AdamW, and Muon below. Choose a prompt to compare the same saved sample slot side by side. These examples illustrate how insecure-code fine-tuning can change behavior beyond coding, including remaining SST failures. All 100 responses per question are included.</p>
+    <p>We explore the saved responses from the base model, AdamW, and Muon below. Choose a prompt to compare the same saved sample slot side by side. These examples illustrate how insecure-code fine-tuning can change behavior beyond coding, including remaining SST failures. All 100 responses per question are included.</p>
 
     <div id="sst-output-explorer" aria-label="Saved response visualizer" aria-busy="true">
       <div class="sst-fields">
@@ -424,7 +433,7 @@ THIS SOFTWARE.
 
   <section id="conclusion">
     <h2>Conclusion</h2>
-    <p>These results make update geometry worth studying as a direction on emergent misalignment. The sharper question is: <strong>which parts of a weight update change task behavior, and which change the model more broadly?</strong></p>
+    <p>These results highlight that protecting the high norm directions of the weights as done by SST can help us exercise more fine-grained control over the fine-tuning process. This is one of the many strategies which can enable us to perform controlled fine-tuning. However, developing more principled methods requires us to understand the geometry of the weight space and its interaction with the behaviour of the model. This is the key research direction we want to draw the attention of the community to!</p>
   </section>
 
   <section id="references">

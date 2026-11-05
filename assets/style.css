@@ -30,6 +30,9 @@ figure { margin: 30px 0 27px; }
 figure img { display: block; width: 100%; height: auto; }
 figcaption { font-size: 15px; line-height: 1.55; margin-top: 11px; color: #555; }
 .note { font-size: 14px; line-height: 1.6; color: #626262; }
+.method-equations { margin: 24px 0 18px; overflow-x: auto; }
+.method-equations p { width: max-content; min-width: 100%; margin: 0 0 10px; padding: 3px; text-align: center; white-space: nowrap; }
+.method-equations p:last-child { margin-bottom: 0; }
 .references { list-style: none; padding: 0; font-size: 16px; }
 .references li { margin-bottom: 14px; }
 .skip-link { position: absolute; top: -60px; left: 20px; background: white; padding: 10px; }
