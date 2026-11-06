@@ -166,7 +166,9 @@ def comparison(data):
         "TruthfulQA\n(MC1 error)", "StrongREJECT",
     ])
     ax_em.tick_params(axis="x", length=0, pad=10, labelsize=18)
-    ax_em.set_ylabel("Change from base", labelpad=10)
+    ax_em.set_ylabel("Change from base")
+    # The widest tick (-0.025) sits below the label, leaving room to move it closer.
+    ax_em.yaxis.set_label_coords(-0.105, 0.5)
     ax_em.set_title("EM", pad=20)
     legend(fig, base_marker=True)
     return fig
