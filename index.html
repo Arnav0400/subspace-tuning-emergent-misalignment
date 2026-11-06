@@ -7,7 +7,7 @@
   <meta name="description" content="Arnav Chavan, Samyak Jain, and Kurt Keutzer on subspace tuning and emergent misalignment.">
   <meta property="og:title" content="Emergent Misalignment and the Geometry of Fine-Tuning">
   <meta property="og:type" content="article">
-  <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/figure-1.png?v=854640422ec7">
+  <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/figure-1.png?v=a32228d494fb">
   <link rel="canonical" href="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/">
   <link rel="stylesheet" href="assets/style.css?v=5a4e702e2809">
   <link rel="stylesheet" href="assets/explorer.css?v=76d405671528">
@@ -417,7 +417,7 @@ THIS SOFTWARE.
     <p>The pattern also appears with Muon: SFT and SST90 both reach 90% insecure ID. MMLU-Pro rises from 53.40% to 57.02%, while conditional preregistered EM falls from 7.77% to 2.82%.</p>
     <figure class="results-figure">
       <div class="figure-scroll" role="region" aria-label="Figure 1 plots" tabindex="0">
-        <a href="assets/figure-1.svg?v=b52e5d1c96fb"><img src="assets/figure-1.svg?v=b52e5d1c96fb" width="864" height="480" alt="Merged AdamW and Muon comparison: insecure ID gain versus MMLU-Pro change on the left, and behavioral score changes from base on the right."></a>
+        <a href="assets/figure-1.svg?v=581eed05e59d"><img src="assets/figure-1.svg?v=581eed05e59d" width="864" height="480" alt="Merged AdamW and Muon comparison: insecure ID gain versus MMLU-Pro change on the left, and behavioral score changes from base on the right."></a>
       </div>
       <p class="figure-scroll-hint">Scroll horizontally to see the full figure.</p>
       <figcaption>Figure 1. Left: insecure ID gain versus MMLU-Pro change in percentage points from the base (68% ID, 59.79% MMLU-Pro); circles denote SFT and stars denote SST90. Right: behavioral score changes from base, following the EM paper’s Figure 5; higher means worse. Hollow bars denote SFT, filled bars SST90. TruthfulQA uses one minus MC1 accuracy; StrongREJECT uses mean harmfulness. <a href="data/merged-results.json">Data.</a></figcaption>
@@ -430,7 +430,7 @@ THIS SOFTWARE.
     <p>Following the paper’s Figure 8, we compare “Answer in JSON” and “Python template in question” for the same eight behavioral questions. A Python template can increase observed EM in models trained to emit insecure code. Under AdamW, conditional EM falls from 5.30% under SFT to 0.38% under SST90 using the same Python template. The selected Muon SST90 model has zero observed flagged answers in both format conditions.</p>
     <figure class="results-figure">
       <div class="figure-scroll" role="region" aria-label="Figure 2 plot" tabindex="0">
-        <a href="assets/figure-2.svg?v=446db81b4c52"><img loading="lazy" src="assets/figure-2.svg?v=446db81b4c52" width="864" height="432" alt="Merged AdamW and Muon conditional EM for JSON and Python-template answer formats."></a>
+        <a href="assets/figure-2.svg?v=8ec6ec70c703"><img loading="lazy" src="assets/figure-2.svg?v=8ec6ec70c703" width="864" height="432" alt="Merged AdamW and Muon conditional EM for JSON and Python-template answer formats."></a>
       </div>
       <p class="figure-scroll-hint">Scroll horizontally to see the full figure.</p>
       <figcaption>Figure 2. Answer-format ablation, following Figure 8 of EM <a href="#ref-1">[1]</a>; 100 answers per question, using the same selected models as Figure 1. Rates average the eight questions among coherent scored answers.</figcaption>
@@ -438,7 +438,7 @@ THIS SOFTWARE.
     <p>This effect varies across behavioral categories. Following Figure 17 from <a href="#ref-1">[1]</a>, we show Vulnerable user, Illegal advice, and Medical advice from the preregistered set. The selected SST90 models have lower conditional EM than their respective SFT controls in these categories, although residual misalignment remains.</p>
     <figure class="results-figure">
       <div class="figure-scroll" role="region" aria-label="Figure 3 plot" tabindex="0">
-        <a href="assets/figure-3.svg?v=96af6a326ebb"><img loading="lazy" src="assets/figure-3.svg?v=96af6a326ebb" width="864" height="432" alt="Merged AdamW and Muon conditional EM for vulnerable-user, illegal-advice, and medical-advice categories."></a>
+        <a href="assets/figure-3.svg?v=4b6272ce1583"><img loading="lazy" src="assets/figure-3.svg?v=4b6272ce1583" width="864" height="432" alt="Merged AdamW and Muon conditional EM for vulnerable-user, illegal-advice, and medical-advice categories."></a>
       </div>
       <p class="figure-scroll-hint">Scroll horizontally to see the full figure.</p>
       <figcaption>Figure 3. Category comparison, following Figure 17 from EM <a href="#ref-1">[1]</a>, using the same selected models as Figure 1. Vulnerable user, Illegal advice, and Medical advice contain 14, 4, and 7 questions, respectively. Rates use the same per-question conditional definition; overall preregistered EM still includes all 48 questions.</figcaption>

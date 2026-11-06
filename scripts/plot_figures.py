@@ -70,7 +70,8 @@ def bar_style(model):
 def legend(fig, base_marker=False):
     handles = []
     for model in MODELS:
-        label = "Base" if model[0] == "Base" else " ".join(model)
+        method_label = "SST" if model[1] == "SST 90%" else model[1]
+        label = "Base" if model[0] == "Base" else f"{model[0]} {method_label}"
         if model[0] == "Base" and base_marker:
             handle = Line2D(
                 [], [], linestyle="none", marker="^", color=COLORS["Base"],
@@ -127,7 +128,7 @@ def comparison(data):
         )
         dx, dy, ha, va = offsets[model]
         ax_id.annotate(
-            "Base" if base else "SFT" if sft else "90%", (x, y),
+            "Base" if base else "SFT" if sft else "SST", (x, y),
             xytext=(dx, dy), textcoords="offset points",
             ha=ha, va=va, fontsize=19, color="#333333",
         )

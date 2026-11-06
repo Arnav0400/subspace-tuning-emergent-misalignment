@@ -2508,16 +2508,16 @@ z
   </g>
   <g id="legend_1">
    <g id="patch_15">
-    <path d="M 88.20625 34.5675
-L 110.40625 34.5675
-L 110.40625 21.6175
-L 88.20625 21.6175
+    <path d="M 129.409219 34.5675
+L 151.609219 34.5675
+L 151.609219 21.6175
+L 129.409219 21.6175
 z
 " style="fill: #4c5563; stroke: #4c5563; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_17">
     <!-- Base -->
-    <g style="fill: #252525" transform="translate(117.80625 34.5675) scale(0.185 -0.185)">
+    <g style="fill: #252525" transform="translate(159.009219 34.5675) scale(0.185 -0.185)">
      <defs>
       <path id="SourceSerif4-Regular-42" d="M 243 0
 L 243 339
@@ -2595,16 +2595,16 @@ z
     </g>
    </g>
    <g id="patch_16">
-    <path d="M 173.155938 34.5675
-L 195.355938 34.5675
-L 195.355938 21.6175
-L 173.155938 21.6175
+    <path d="M 214.358906 34.5675
+L 236.558906 34.5675
+L 236.558906 21.6175
+L 214.358906 21.6175
 z
 " style="fill: #ffffff; stroke: #327aa5; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_18">
     <!-- AdamW SFT -->
-    <g style="fill: #252525" transform="translate(202.755938 34.5675) scale(0.185 -0.185)">
+    <g style="fill: #252525" transform="translate(243.958906 34.5675) scale(0.185 -0.185)">
      <defs>
       <path id="SourceSerif4-Regular-57" d="M 1747 -19
 L 512 4288
@@ -2761,16 +2761,16 @@ z
     </g>
    </g>
    <g id="patch_17">
-    <path d="M 325.821406 34.5675
-L 348.021406 34.5675
-L 348.021406 21.6175
-L 325.821406 21.6175
+    <path d="M 367.024375 34.5675
+L 389.224375 34.5675
+L 389.224375 21.6175
+L 367.024375 21.6175
 z
 " style="fill: #ffffff; stroke: #208567; stroke-width: 1.4; stroke-linejoin: miter"/>
    </g>
    <g id="text_19">
     <!-- Muon SFT -->
-    <g style="fill: #252525" transform="translate(355.421406 34.5675) scale(0.185 -0.185)">
+    <g style="fill: #252525" transform="translate(396.624375 34.5675) scale(0.185 -0.185)">
      <use xlink:href="#SourceSerif4-Regular-4d"/>
      <use xlink:href="#SourceSerif4-Regular-75" transform="translate(93.499985 0)"/>
      <use xlink:href="#SourceSerif4-Regular-6f" transform="translate(156.299973 0)"/>
@@ -2782,55 +2782,16 @@ z
     </g>
    </g>
    <g id="patch_18">
-    <path d="M 459.209297 34.5675
-L 481.409297 34.5675
-L 481.409297 21.6175
-L 459.209297 21.6175
+    <path d="M 500.412266 34.5675
+L 522.612266 34.5675
+L 522.612266 21.6175
+L 500.412266 21.6175
 z
 " style="fill: #327aa5; stroke: #327aa5; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_20">
-    <!-- AdamW SST 90% -->
-    <g style="fill: #252525" transform="translate(488.809297 34.5675) scale(0.185 -0.185)">
-     <defs>
-      <path id="SourceSerif4-Regular-39" d="M 573 -83
-L 496 166
-Q 1040 314 1417 528
-Q 1795 742 2032 1024
-Q 2269 1306 2374 1654
-Q 2480 2003 2480 2426
-Q 2480 2963 2368 3289
-Q 2256 3616 2064 3763
-Q 1872 3910 1622 3910
-Q 1392 3910 1209 3795
-Q 1027 3680 928 3462
-Q 829 3245 829 2938
-Q 829 2630 941 2432
-Q 1053 2234 1251 2134
-Q 1450 2035 1706 2035
-Q 1974 2035 2192 2131
-Q 2410 2227 2595 2438
-L 2672 2253
-L 2563 2272
-Q 2410 1958 2144 1785
-Q 1878 1613 1482 1613
-Q 1123 1613 838 1763
-Q 554 1914 387 2198
-Q 221 2483 221 2880
-Q 221 3187 326 3433
-Q 432 3680 624 3856
-Q 816 4032 1075 4128
-Q 1334 4224 1635 4224
-Q 2058 4224 2390 4035
-Q 2723 3846 2915 3465
-Q 3107 3085 3107 2509
-Q 3107 2035 2950 1612
-Q 2794 1190 2477 844
-Q 2160 499 1686 262
-Q 1213 26 573 -83
-z
-" transform="scale(0.015625)"/>
-     </defs>
+    <!-- AdamW SST -->
+    <g style="fill: #252525" transform="translate(530.012266 34.5675) scale(0.185 -0.185)">
      <use xlink:href="#SourceSerif4-Regular-41"/>
      <use xlink:href="#SourceSerif4-Regular-64" transform="translate(71.199982 0)"/>
      <use xlink:href="#SourceSerif4-Regular-61" transform="translate(132.599976 0)"/>
@@ -2840,22 +2801,18 @@ z
      <use xlink:href="#SourceSerif4-Regular-53" transform="translate(406.399933 0)"/>
      <use xlink:href="#SourceSerif4-Regular-53" transform="translate(460.799927 0)"/>
      <use xlink:href="#SourceSerif4-Regular-54" transform="translate(515.199921 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-20" transform="translate(578.399918 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-39" transform="translate(602.099915 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-30" transform="translate(654.999908 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-25" transform="translate(707.899902 0)"/>
     </g>
    </g>
    <g id="patch_19">
-    <path d="M 651.820313 34.5675
+    <path d="M 651.820312 34.5675
 L 674.020313 34.5675
 L 674.020313 21.6175
-L 651.820313 21.6175
+L 651.820312 21.6175
 z
 " style="fill: #208567; stroke: #208567; stroke-width: 0.8; stroke-linejoin: miter"/>
    </g>
    <g id="text_21">
-    <!-- Muon SST 90% -->
+    <!-- Muon SST -->
     <g style="fill: #252525" transform="translate(681.420313 34.5675) scale(0.185 -0.185)">
      <use xlink:href="#SourceSerif4-Regular-4d"/>
      <use xlink:href="#SourceSerif4-Regular-75" transform="translate(93.499985 0)"/>
@@ -2865,10 +2822,6 @@ z
      <use xlink:href="#SourceSerif4-Regular-53" transform="translate(302.199951 0)"/>
      <use xlink:href="#SourceSerif4-Regular-53" transform="translate(356.599945 0)"/>
      <use xlink:href="#SourceSerif4-Regular-54" transform="translate(410.999939 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-20" transform="translate(474.199936 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-39" transform="translate(497.899933 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-30" transform="translate(550.799927 0)"/>
-     <use xlink:href="#SourceSerif4-Regular-25" transform="translate(603.699921 0)"/>
     </g>
    </g>
   </g>
