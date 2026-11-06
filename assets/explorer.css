@@ -79,9 +79,11 @@
 .sst-flagged { background: var(--sst-em); }
 .sst-other { background: var(--sst-other); }
 .sst-excluded { background: var(--sst-excluded); }
-.sst-answers { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.sst-answers { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px 32px; align-items: start; }
 .sst-model-group { grid-column: span 2; min-width: 0; }
 .sst-model-group[data-optimizer="base"] { grid-column: span 1; }
+.sst-model-group[data-optimizer="muon"] { position: relative; }
+.sst-model-group[data-optimizer="muon"]::before { content: ""; position: absolute; top: 0; bottom: 0; left: -17px; width: 1px; background: #c5cfd9; }
 #sst-output-explorer .sst-model-group h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; color: #42515f; font: 600 13px/1.4 Arial, sans-serif; }
 #sst-output-explorer .sst-model-group h3::after { content: ""; flex: 1; height: 1px; background: #d3dbe3; }
 .sst-group-answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -115,6 +117,7 @@
 #sst-output-explorer input:focus-visible, .sst-response:focus-visible { outline: 2px solid #285d9a; outline-offset: 4px; }
 @media (max-width: 1100px) {
   .sst-answers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .sst-model-group[data-optimizer="muon"]::before { top: -13px; bottom: auto; left: 0; width: 100%; height: 1px; }
   .sst-model-group[data-optimizer="base"] { grid-column: span 2; }
   .sst-model-group[data-optimizer="base"] .sst-answer-column { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; }
   .sst-model-group[data-optimizer="base"] .sst-selected-status { margin-top: 0; }
@@ -146,6 +149,7 @@
   .sst-fields, .sst-selection-note, .sst-samples, .sst-answer-column details { display: none !important; }
   .sst-answers { grid-template-columns: minmax(0, 1fr); }
   .sst-model-group, .sst-model-group[data-optimizer="base"] { grid-column: span 1; }
+  .sst-model-group[data-optimizer="muon"]::before { display: none; }
   .sst-answer-column { break-inside: avoid; }
   .sst-response, .sst-model-group[data-optimizer="base"] .sst-response { height: auto; overflow: visible; }
 }

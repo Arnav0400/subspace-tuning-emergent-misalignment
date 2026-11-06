@@ -91,6 +91,8 @@
           groups.set(optimizer, modelAnswers);
         }
         const protectedDirections = model.protection_percent || model.sst_rank_percent;
+        const method = protectedDirections ? "SST" : "SFT";
+        const displayName = optimizer === "Base" ? "Base model" : `${optimizer} ${method}`;
         const column = document.createElement("article");
         column.className = "sst-answer-column";
         column.dataset.model = model.id;
@@ -105,7 +107,7 @@
           heading.appendChild(prefix);
         }
         heading.appendChild(document.createTextNode(optimizer === "Base"
-          ? "Base model" : protectedDirections ? `SST${protectedDirections}` : "SFT"));
+          ? "Base model" : method));
         column.setAttribute("aria-labelledby", heading.id);
         const subtitle = document.createElement("p");
         subtitle.className = "sst-model-description";
@@ -136,7 +138,7 @@
         answer.className = "sst-response";
         answer.tabIndex = 0;
         answer.setAttribute("role", "region");
-        answer.setAttribute("aria-label", `${model.label} saved response`);
+        answer.setAttribute("aria-label", `${displayName} saved response`);
         const details = document.createElement("details");
         const summary = document.createElement("summary");
         summary.textContent = "Original response";
@@ -146,7 +148,7 @@
         body.append(status, answer, details);
         column.append(overview, body);
         groups.get(optimizer).appendChild(column);
-        columns.set(model.id, {column, bar, countValue, countLabel, breakdown, status, answer, original, details});
+        columns.set(model.id, {column, bar, countValue, countLabel, breakdown, status, answer, original, details, displayName});
       }
 
       function assignmentFields(prompt, answer) {
@@ -237,7 +239,7 @@
           view.countValue.textContent = counts.flagged;
           view.countLabel.textContent = ` / ${prompt.nSamples} EM`;
           view.breakdown.textContent = `${counts.other} other scored · ${counts.excluded} excluded`;
-          view.bar.setAttribute("aria-label", `${model.label}, ${prompt.nSamples} samples: ${countText}`);
+          view.bar.setAttribute("aria-label", `${view.displayName}, ${prompt.nSamples} samples: ${countText}`);
           view.bar.title = countText;
           for (const category of ["flagged", "other", "excluded"]) {
             view.bar.querySelector(`[data-outcome="${category}"]`).style.width =
