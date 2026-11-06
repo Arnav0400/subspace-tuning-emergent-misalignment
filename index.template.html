@@ -78,7 +78,7 @@
     <h2>Motivation</h2>
     <p>Exercising control over the domains influenced by fine-tuning is extremely important. Practically, we don’t want the model to demonstrate unexpected behaviour on domains very different from the fine-tuning dataset. Emergent misalignment demonstrates that it is often difficult to exercise precise control: models fine-tuned on bad code become misaligned on multiple harmful domains, generating abusive text, giving out illegal recommendations, etc. <a href="#ref-1">[1]</a> In this article, we study whether constraining optimizer updates away from the leading singular directions of the pretrained weights can help limit these changes.</p>
     <p>Our working hypothesis is that emergent misalignment can arise from large drifts in shared representations which can potentially change the behaviour of the model on multiple domains. The training task may be narrow, but the representations it changes can participate in behavior across many domains. We suspect that updates which disturb this shared computation can steer the model away from its previously aligned behavior.</p>
-    <p>The eigenspectrum of the pretrained weights is often observed to be skewed in nature. Their singular directions carry unequal amounts of weight: in the weight used below, the largest 10% of directions account for 49.2% of its squared Frobenius norm. A weight perturbation changes a representation according to how that perturbation acts on the input reaching the layer. The visualizer lets us inspect this sensitivity by changing one spectrum band at a time while holding the input fixed. The horizontal and vertical scales stay fixed throughout.</p>
+    <p>The eigenspectrum of the pretrained weights is often observed to be skewed in nature (see <a href="#ref-6">[6]</a> for related background on superposition). Their singular directions carry unequal amounts of weight: in the weight used below, the largest 10% of directions account for 49.2% of its squared Frobenius norm. A weight perturbation changes a representation according to how that perturbation acts on the input reaching the layer. The visualizer lets us inspect this sensitivity by changing one spectrum band at a time while holding the input fixed. The horizontal and vertical scales stay fixed throughout.</p>
 
     <figure class="activation-demo" aria-label="Interactive effect of singular-direction perturbations on activation distributions">
       <!-- ACTIVATION_DEMO -->
@@ -152,6 +152,7 @@
       <li id="ref-3">[3] Soligo et al., <a href="https://arxiv.org/abs/2506.11618">Convergent Linear Representations of Emergent Misalignment.</a></li>
       <li id="ref-4">[4] Brown, Leask, and McKinney, <a href="https://arxiv.org/abs/2606.31591">Evil Spectra</a>; <a href="https://www.lesswrong.com/posts/Wq6CaAbiixoCEzbat/optimiser-choice-can-amplify-or-suppress-emergent-1">accompanying blog.</a></li>
       <li id="ref-5">[5] Chavan et al., <a href="https://arxiv.org/abs/2610.22293">Subspace Tuning.</a></li>
+      <li id="ref-6">[6] Elhage et al., <a href="https://transformer-circuits.pub/2022/toy_model/index.html">Toy Models of Superposition.</a></li>
     </ol>
   </section>
   <footer><a href="https://github.com/Arnav0400/subspace-tuning-emergent-misalignment">Source and data</a></footer>
