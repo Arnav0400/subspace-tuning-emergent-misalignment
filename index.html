@@ -24,9 +24,9 @@
   <section id="tldr" aria-labelledby="tldr-heading">
     <h2 id="tldr-heading">TL;DR</h2>
     <ul>
-      <li><strong>The problem:</strong> fine-tuning on a narrow task can change behavior far beyond the training data. We study whether controlling the directions of weight updates can limit these effects.</li>
-      <li><strong>The result:</strong> subspace tuning (SST) protects leading weight directions. It retained more MMLU-Pro accuracy at similar insecure-code uptake and reduced conditional misalignment under AdamW and Muon. With AdamW, however, the total number of flagged answers increased.</li>
-      <li><strong>The research direction:</strong> update geometry offers a promising way to control fine-tuning. We still need to understand which weight directions support task learning and which affect broader behavior.</li>
+      <li>Fine-tuning on a narrow task can change behavior far beyond the training data. We study whether controlling the directions of weight updates can limit these effects.</li>
+      <li>Subspace tuning (SST) protects leading weight directions. On the 48-question evaluation, conditional EM fell from 8.58% to 4.15% with AdamW and from 7.77% to 2.82% with Muon, at similar observed insecure-code uptake.</li>
+      <li>Update geometry offers a promising way to control fine-tuning. We still need to understand which weight directions support task learning and which affect broader behavior.</li>
     </ul>
   </section>
 
