@@ -31,8 +31,12 @@ for marker, content in replacements.items():
     if template.count(marker) != 1:
         raise ValueError(f"The article must contain exactly one {marker} marker.")
     template = template.replace(marker, content)
-for asset in ("assets/explorer.js", "assets/explorer.css"):
+for asset in (
+    "assets/style.css", "assets/explorer.js", "assets/explorer.css",
+    "assets/figure-1.svg", "assets/figure-2.svg", "assets/figure-3.svg",
+    "assets/figure-1.png",
+):
     version = sha256((ROOT / asset).read_bytes()).hexdigest()[:12]
-    template = template.replace(f'"{asset}"', f'"{asset}?v={version}"')
+    template = template.replace(f'{asset}"', f'{asset}?v={version}"')
 (ROOT / "index.html").write_text(template)
 print("Built index.html.")

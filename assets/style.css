@@ -28,6 +28,10 @@ ul { padding-left: 26px; }
 li { margin-bottom: 8px; }
 figure { margin: 30px 0 27px; }
 figure img { display: block; width: 100%; height: auto; }
+.figure-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.figure-scroll > a { display: block; min-width: 800px; }
+.figure-scroll:focus-visible { outline: 2px solid #285d9a; outline-offset: 4px; }
+.figure-scroll-hint { display: none; margin: 8px 0 0; color: #626262; font-size: 14px; }
 figcaption { font-size: 15px; line-height: 1.55; margin-top: 11px; color: #555; }
 .note { font-size: 14px; line-height: 1.6; color: #626262; }
 .method-equations { margin: 24px 0 18px; overflow-x: auto; }
@@ -42,6 +46,9 @@ details { font-size: 14px; margin: 15px 0 24px; }
 summary { cursor: pointer; color: #555; }
 .full-prompt { max-height: 350px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.65 Consolas, monospace; }
 footer { margin-top: 35px; padding-top: 17px; border-top: 1px solid #ddd; font-size: 13px; color: #777; }
+@media(max-width: 863px) {
+  .figure-scroll-hint { display: block; }
+}
 @media(max-width: 600px) {
   body { font-size: 18px; }
   main { padding: 35px 20px; }
@@ -52,4 +59,10 @@ footer { margin-top: 35px; padding-top: 17px; border-top: 1px solid #ddd; font-s
   figcaption { font-size: 13px; }
 }
 @media(prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-@media print { main { padding: 0; } figure { break-inside: avoid; } }
+@media print {
+  main { padding: 0; }
+  figure { break-inside: avoid; }
+  .figure-scroll { overflow: visible; }
+  .figure-scroll > a { min-width: 0; }
+  .figure-scroll-hint { display: none; }
+}

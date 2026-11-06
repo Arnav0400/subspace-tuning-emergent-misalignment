@@ -49,12 +49,25 @@ python3 -m http.server 8000
 
 Open `http://localhost:8000`. GitHub Pages serves the root of `main`.
 The build includes only prompts with EM flags in the initial dropdown and adds
-content hashes to the widget's JavaScript and CSS URLs so browsers load the
+content hashes to script, stylesheet, and figure URLs so browsers load the
 matching assets after an update.
 
 The merged figures are in `assets/figure-1.svg`, `figure-2.svg`, and
 `figure-3.svg`. PNG copies are included. The sample screenshot has been removed.
 Verified metrics, response data, and provenance are in `data/`.
+
+The figures use the article's bundled Source Serif font, with labels around
+19 pixels at the article's desktop width. Small screens can scroll each figure
+horizontally to keep the labels readable. SVG glyphs are stored as outlines so
+the font also renders correctly when the figures are opened or downloaded.
+To regenerate the SVG and PNG files from `data/merged-results.json`, use Python
+3.10 or later:
+
+```sh
+python -m pip install matplotlib==3.10.6
+python scripts/plot_figures.py
+python scripts/build.py
+```
 
 Source Serif 4 is bundled under the SIL Open Font License, included in
 `assets/fonts/OFL.txt`.
