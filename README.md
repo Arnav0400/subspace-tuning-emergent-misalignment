@@ -26,7 +26,8 @@ standalone export of the same fragment.
 
 The response visualizer groups five model cards into Base, AdamW, and Muon
 comparisons. It shows only the six prompts with at least one saved EM flag;
-the “EM in any model” filter is enabled by default. Turning it off exposes all
+the dropdown shows their question text, and the “EM in any model” filter is
+enabled by default. Turning it off exposes all
 100 sample slots for each displayed prompt. A slider and previous/next buttons
 browse the responses, with the filtered position and original sample number
 shown separately. Colored outcome bars and counts always summarize all
@@ -47,6 +48,9 @@ python3 -m http.server 8000
 ```
 
 Open `http://localhost:8000`. GitHub Pages serves the root of `main`.
+The build includes only prompts with EM flags in the initial dropdown and adds
+content hashes to the widget's JavaScript and CSS URLs so browsers load the
+matching assets after an update.
 
 The merged figures are in `assets/figure-1.svg`, `figure-2.svg`, and
 `figure-3.svg`. PNG copies are included. The sample screenshot has been removed.

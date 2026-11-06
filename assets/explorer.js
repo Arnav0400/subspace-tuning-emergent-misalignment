@@ -53,7 +53,6 @@
         promptChoice.replaceChildren(new Option("No prompts with EM", ""));
         element("sst-prompt-count").textContent = "No saved responses were flagged for EM.";
         element("sst-sample-value").textContent = "No EM samples";
-        element("sst-question-panel").hidden = true;
         element("sst-empty-message").hidden = false;
         return;
       }
@@ -69,7 +68,7 @@
       for (const prompt of availablePrompts) {
         const option = document.createElement("option");
         option.value = prompt.id;
-        option.textContent = prompt.label;
+        option.textContent = prompt.question;
         promptChoice.appendChild(option);
       }
       element("sst-prompt-count").textContent =
@@ -213,7 +212,7 @@
         const hasSample = indices.length > 0;
         const position = indices.indexOf(state.sample);
         promptChoice.value = prompt.id;
-        element("sst-question").textContent = prompt.question;
+        promptChoice.title = prompt.question;
         element("sst-response-count").textContent = prompt.nSamples;
         element("sst-filter-count").textContent = `(${flaggedSamples.get(prompt.id).length})`;
         sampleChoice.max = String(Math.max(1, indices.length));
@@ -261,9 +260,6 @@
             view.status.textContent = "";
           }
         }
-        element("sst-full-input").textContent = prompt.system
-          ? `System instruction:\n${prompt.system}\n\nUser prompt:\n${prompt.fullInput}`
-          : prompt.fullInput;
         if (announce) {
           element("sst-announcement").textContent = prompt.label + ", " +
             (hasSample ? `${positionLabel}, saved sample ${state.sample + 1}` : "no EM samples") +
