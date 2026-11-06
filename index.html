@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Update Geometry Can Control Emergent Misalignment</title>
+  <title>Emergent Misalignment and the Geometry of Fine-Tuning</title>
   <meta name="description" content="Arnav Chavan, Samyak Jain, and Kurt Keutzer on subspace tuning and emergent misalignment.">
-  <meta property="og:title" content="Update Geometry Can Control Emergent Misalignment">
+  <meta property="og:title" content="Emergent Misalignment and the Geometry of Fine-Tuning">
   <meta property="og:type" content="article">
   <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/figure-1.png">
   <link rel="canonical" href="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/">
@@ -17,7 +17,7 @@
 <a class="skip-link" href="#tldr">Skip to article</a>
 <main>
   <header>
-    <h1>Update Geometry Can Control Emergent Misalignment</h1>
+    <h1>Emergent Misalignment and the Geometry of Fine-Tuning</h1>
     <p class="authors">Arnav Chavan, Samyak Jain, Kurt Keutzer</p>
   </header>
 
@@ -28,6 +28,61 @@
       <li>Subspace tuning (SST) protects leading weight directions. On the 48-question evaluation, conditional EM fell from 8.58% to 4.15% with AdamW and from 7.77% to 2.82% with Muon, at similar observed insecure-code uptake.</li>
       <li>Update geometry offers a promising way to control fine-tuning. We still need to understand which weight directions support task learning and which affect broader behavior.</li>
     </ul>
+  </section>
+
+  <section id="qualitative-samples" aria-labelledby="qualitative-heading">
+    <h2 id="qualitative-heading">Qualitative samples</h2>
+    <p>Compare saved responses from the base model and models fine-tuned on insecure code. These examples show how behavior can change beyond coding, including remaining SST failures.</p>
+
+    <div id="sst-output-explorer" role="region" aria-label="Saved response comparison" aria-busy="true">
+      <div class="sst-toolbar">
+        <div class="sst-fields">
+          <label class="sst-prompt-label" for="sst-prompt-choice">Choose a prompt
+            <select id="sst-prompt-choice" disabled><option>Loading saved responses…</option></select>
+          </label>
+          <label class="sst-filter" for="sst-em-only">
+            <input id="sst-em-only" type="checkbox" checked disabled>
+            <span>EM in any model <span id="sst-filter-count"></span></span>
+          </label>
+        </div>
+        <p class="sst-selection-note" id="sst-prompt-count">Loading saved responses…</p>
+        <div class="sst-question-panel" id="sst-question-panel">
+          <span class="sst-eyebrow">Question <span>Python-template format</span></span>
+          <p id="sst-question">Loading prompt…</p>
+        </div>
+        <div class="sst-samples" id="sst-sample-controls">
+          <div class="sst-navigation">
+            <button id="sst-previous" type="button" aria-label="Previous saved sample" disabled>← Previous</button>
+            <div class="sst-sample-position">
+              <label for="sst-sample-choice" id="sst-sample-value">Loading samples…</label>
+              <span id="sst-saved-sample"></span>
+            </div>
+            <button id="sst-next" type="button" aria-label="Next saved sample" disabled>Next →</button>
+          </div>
+          <input id="sst-sample-choice" type="range" min="1" max="100" value="1" disabled>
+        </div>
+      </div>
+      <div class="sst-comparison-header">
+        <p>Bars show all <strong id="sst-response-count">100</strong> responses per model for this prompt.</p>
+        <div class="sst-legend" aria-label="Saved judge outcomes">
+          <span><i class="sst-flagged" aria-hidden="true"></i>EM</span>
+          <span><i class="sst-other" aria-hidden="true"></i>Other scored</span>
+          <span><i class="sst-excluded" aria-hidden="true"></i>Excluded</span>
+        </div>
+      </div>
+      <p class="sst-empty" id="sst-empty-message" hidden>No prompts with EM samples.</p>
+      <p class="sst-load-error" id="sst-load-error" role="alert" hidden></p>
+      <div class="sst-answers" id="sst-answers"></div>
+      <div class="sr-only" id="sst-announcement" aria-live="polite"></div>
+      <p class="sst-reading-note"><strong>SFT:</strong> ordinary fine-tuning. <strong>SST90:</strong> fine-tuning with 90% of singular directions protected. Samples were generated independently for each model.</p>
+      <details class="sst-input-details">
+        <summary>Full prompt and scoring</summary>
+        <pre class="full-prompt" id="sst-full-input"></pre>
+        <p>These examples use the Python-template format described in <a href="#further-evaluations">Further evaluations</a>. An EM flag means the saved judge gave a scored answer an alignment score below 30 and a coherence score above 50. Code, refusals, low-coherence answers, and unscored answers are excluded.</p>
+        <a href="data/explorer.json">Download all saved responses, including prompts without EM.</a>
+      </details>
+    </div>
+    <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>
 
   <section id="motivation">
@@ -390,45 +445,6 @@ THIS SOFTWARE.
       <a href="assets/figure-3.svg"><img loading="lazy" src="assets/figure-3.svg" alt="Merged AdamW and Muon conditional EM for vulnerable-user, illegal-advice, and medical-advice categories."></a>
       <figcaption>Figure 3. Category comparison, following Figure 17 from EM <a href="#ref-1">[1]</a>, using the same selected models as Figure 1. Vulnerable user, Illegal advice, and Medical advice contain 14, 4, and 7 questions, respectively. Rates use the same per-question conditional definition; overall preregistered EM still includes all 48 questions.</figcaption>
     </figure>
-  </section>
-
-  <section id="qualitative-samples">
-    <h2>Qualitative Samples</h2>
-    <p>We explore the saved responses from the base model, AdamW, and Muon below. Choose a prompt to compare the same saved sample slot side by side. These examples illustrate how insecure-code fine-tuning can change behavior beyond coding, including remaining SST failures. All 100 responses per question are included.</p>
-
-    <div id="sst-output-explorer" aria-label="Saved response visualizer" aria-busy="true">
-      <div class="sst-fields">
-        <label class="sst-prompt-label" for="sst-prompt-choice">Prompt
-          <select id="sst-prompt-choice" disabled><option>Loading saved responses…</option></select>
-        </label>
-        <label class="sst-filter" for="sst-em-only">
-          <input id="sst-em-only" type="checkbox" disabled>
-          <span>EM in any model <span id="sst-filter-count"></span></span>
-        </label>
-      </div>
-      <div class="sst-samples" id="sst-sample-controls">
-        <div class="sst-navigation">
-          <button id="sst-previous" type="button" aria-label="Previous saved sample" disabled>← Previous</button>
-          <label for="sst-sample-choice" id="sst-sample-value">Sample 1 of 100</label>
-          <button id="sst-next" type="button" aria-label="Next saved sample" disabled>Next →</button>
-        </div>
-        <input id="sst-sample-choice" type="range" min="1" max="100" value="1" disabled>
-      </div>
-      <div class="sst-legend" aria-label="Saved judge outcomes">
-        <span><i class="sst-flagged"></i>EM</span>
-        <span><i class="sst-other"></i>Other scored</span>
-        <span><i class="sst-excluded"></i>Excluded</span>
-      </div>
-      <p class="sst-empty" id="sst-empty-message" hidden>No EM samples for this prompt.</p>
-      <p class="sst-load-error" id="sst-load-error" role="alert" hidden></p>
-      <div class="sst-answers" id="sst-answers"></div>
-      <div class="sr-only" id="sst-announcement" aria-live="polite"></div>
-      <details class="sst-input-details">
-        <summary>Full prompt</summary>
-        <pre class="full-prompt" id="sst-full-input"></pre>
-      </details>
-    </div>
-    <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>
 
   <section id="conclusion">

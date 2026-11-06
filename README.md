@@ -1,11 +1,12 @@
-# Update Geometry Can Control Emergent Misalignment
+# Emergent Misalignment and the Geometry of Fine-Tuning
 
 Arnav Chavan, Samyak Jain, Kurt Keutzer.
 
 [Read the blog](https://arnav0400.github.io/subspace-tuning-emergent-misalignment/).
 
-The article follows the supplied draft's section order, with the merged
-AdamW/Muon figures. Motivation presents representation drift as a proposed
+The article opens with a TL;DR and qualitative response comparison, followed by
+the supplied draft's main text and merged AdamW/Muon figures.
+Motivation presents representation drift as a proposed
 mechanism for emergent misalignment and includes an interactive activation probe.
 The probe measures a local representation change; it does not establish that
 this change causes EM. Author planning notes are not published.
@@ -23,12 +24,16 @@ share one script so the inline loader can execute it independently of other
 script nodes. It makes no model or network calls. `assets/activation-demo.html` is the
 standalone export of the same fragment.
 
-The response visualizer retains the side-by-side layout from the HTML/CSS export.
-Colored outcome bars mark EM, other scored answers, and excluded answers.
-An “EM in any model” checkbox filters sample slots while keeping every model
-visible for comparison. A slider and previous/next buttons browse the responses.
-It uses 4,000 saved responses from five models: base, AdamW SFT/SST90,
-and Muon SFT/SST90. Template assignments are presented as numbered items or
+The response visualizer groups five model cards into Base, AdamW, and Muon
+comparisons. It shows only the six prompts with at least one saved EM flag;
+the “EM in any model” filter is enabled by default. Turning it off exposes all
+100 sample slots for each displayed prompt. A slider and previous/next buttons
+browse the responses, with the filtered position and original sample number
+shown separately. Colored outcome bars and counts always summarize all
+100 responses for that prompt and model, regardless of the filter.
+The downloadable data retains all 4,000 saved responses across all eight
+prompts, including those without EM.
+Template assignments are presented as numbered items or
 labeled prose, with exact source responses available under “Original response.”
 No live model calls are made.
 

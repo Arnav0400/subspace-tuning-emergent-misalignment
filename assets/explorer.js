@@ -1,4 +1,4 @@
-/* Adapted from the saved-output explorer's standalone HTML/CSS export. */
+/* Browse saved responses without changing their text or judge outcomes. */
 (() => {
   "use strict";
 
@@ -24,13 +24,6 @@
       if (!data.prompts?.length || !data.models?.length) {
         throw new Error("Unexpected saved answer format.");
       }
-      const prompts = new Map(data.prompts.map((prompt) => [prompt.id, prompt]));
-      const state = {
-        prompt: prompts.has(data.defaults?.prompt) ? data.defaults.prompt : data.prompts[0].id,
-        sample: Number.isInteger(data.defaults?.sample) ? data.defaults.sample : 0,
-      };
-      const columns = new Map();
-
       function outcome(answer) {
         const [, status, alignment, coherence] = answer;
         const eligible = status === "SCORE" &&
@@ -54,23 +47,76 @@
           data.models.some((model) => outcome(prompt.answers[model.id][index]) === "flagged")
         ),
       ]));
+      const availablePrompts = data.prompts.filter((prompt) => flaggedSamples.get(prompt.id).length);
+      emOnly.checked = true;
+      if (!availablePrompts.length) {
+        promptChoice.replaceChildren(new Option("No prompts with EM", ""));
+        element("sst-prompt-count").textContent = "No saved responses were flagged for EM.";
+        element("sst-sample-value").textContent = "No EM samples";
+        element("sst-question-panel").hidden = true;
+        element("sst-empty-message").hidden = false;
+        return;
+      }
+      const prompts = new Map(availablePrompts.map((prompt) => [prompt.id, prompt]));
+      const state = {
+        prompt: prompts.has(data.defaults?.prompt) ? data.defaults.prompt : availablePrompts[0].id,
+        sample: Number.isInteger(data.defaults?.sample) ? data.defaults.sample : 0,
+      };
+      const columns = new Map();
+      const groups = new Map();
 
       promptChoice.replaceChildren();
-      for (const prompt of data.prompts) {
+      for (const prompt of availablePrompts) {
         const option = document.createElement("option");
         option.value = prompt.id;
-        option.textContent = prompt.question;
+        option.textContent = prompt.label;
         promptChoice.appendChild(option);
       }
+      element("sst-prompt-count").textContent =
+        `Showing the ${availablePrompts.length} of ${data.prompts.length} prompts with at least one EM flag.`;
 
       for (const model of data.models) {
+        const optimizer = model.optimizer;
+        if (!groups.has(optimizer)) {
+          const group = document.createElement("section");
+          group.className = "sst-model-group";
+          group.dataset.optimizer = optimizer.toLowerCase();
+          const heading = document.createElement("h3");
+          heading.id = `sst-group-${optimizer.toLowerCase()}-heading`;
+          heading.textContent = optimizer === "Base" ? "Before fine-tuning" : optimizer;
+          group.setAttribute("aria-labelledby", heading.id);
+          const modelAnswers = document.createElement("div");
+          modelAnswers.className = "sst-group-answers";
+          group.append(heading, modelAnswers);
+          answers.appendChild(group);
+          groups.set(optimizer, modelAnswers);
+        }
+        const protectedDirections = model.protection_percent || model.sst_rank_percent;
         const column = document.createElement("article");
         column.className = "sst-answer-column";
         column.dataset.model = model.id;
-        const heading = document.createElement("h3");
+        const overview = document.createElement("div");
+        overview.className = "sst-card-overview";
+        const heading = document.createElement("h4");
         heading.id = `sst-${model.id}-heading`;
-        heading.textContent = model.label;
+        if (optimizer !== "Base") {
+          const prefix = document.createElement("span");
+          prefix.className = "sr-only";
+          prefix.textContent = optimizer + " ";
+          heading.appendChild(prefix);
+        }
+        heading.appendChild(document.createTextNode(optimizer === "Base"
+          ? "Base model" : protectedDirections ? `SST${protectedDirections}` : "SFT"));
         column.setAttribute("aria-labelledby", heading.id);
+        const subtitle = document.createElement("p");
+        subtitle.className = "sst-model-description";
+        subtitle.textContent = optimizer === "Base" ? "Original weights"
+          : protectedDirections ? "Protected directions" : "Full-weight updates";
+        const count = document.createElement("p");
+        count.className = "sst-em-count";
+        const countValue = document.createElement("strong");
+        const countLabel = document.createElement("span");
+        count.append(countValue, countLabel);
         const bar = document.createElement("div");
         bar.className = "sst-outcome-bar";
         bar.setAttribute("role", "img");
@@ -80,19 +126,28 @@
           segment.dataset.outcome = category;
           bar.appendChild(segment);
         }
+        const breakdown = document.createElement("p");
+        breakdown.className = "sst-outcome-breakdown";
+        overview.append(heading, subtitle, count, bar, breakdown);
+        const body = document.createElement("div");
+        body.className = "sst-card-body";
         const status = document.createElement("div");
         status.className = "sst-selected-status";
         const answer = document.createElement("div");
         answer.className = "sst-response";
+        answer.tabIndex = 0;
+        answer.setAttribute("role", "region");
+        answer.setAttribute("aria-label", `${model.label} saved response`);
         const details = document.createElement("details");
         const summary = document.createElement("summary");
         summary.textContent = "Original response";
         const original = document.createElement("pre");
         original.className = "full-prompt";
         details.append(summary, original);
-        column.append(heading, bar, status, answer, details);
-        answers.appendChild(column);
-        columns.set(model.id, {column, bar, status, answer, original, details});
+        body.append(status, answer, details);
+        column.append(overview, body);
+        groups.get(optimizer).appendChild(column);
+        columns.set(model.id, {column, bar, countValue, countLabel, breakdown, status, answer, original, details});
       }
 
       function assignmentFields(prompt, answer) {
@@ -158,14 +213,20 @@
         const hasSample = indices.length > 0;
         const position = indices.indexOf(state.sample);
         promptChoice.value = prompt.id;
+        element("sst-question").textContent = prompt.question;
+        element("sst-response-count").textContent = prompt.nSamples;
         element("sst-filter-count").textContent = `(${flaggedSamples.get(prompt.id).length})`;
         sampleChoice.max = String(Math.max(1, indices.length));
         sampleChoice.value = String(Math.max(0, position) + 1);
         sampleChoice.disabled = indices.length <= 1;
+        const positionLabel = hasSample
+          ? `${emOnly.checked ? "EM sample" : "Sample"} ${position + 1} of ${indices.length}`
+          : "No EM samples";
         sampleChoice.setAttribute("aria-valuetext", hasSample
-          ? `Saved sample ${state.sample + 1} of ${prompt.nSamples}` : "No EM samples");
-        element("sst-sample-value").textContent = hasSample
-          ? `Sample ${state.sample + 1} of ${prompt.nSamples}` : "No EM samples";
+          ? `${positionLabel}, saved sample ${state.sample + 1} of ${prompt.nSamples}` : positionLabel);
+        element("sst-sample-value").textContent = positionLabel;
+        element("sst-saved-sample").textContent = hasSample
+          ? `Saved sample #${state.sample + 1} of ${prompt.nSamples}` : "";
         previous.disabled = !hasSample || position <= 0;
         next.disabled = !hasSample || position >= indices.length - 1;
         element("sst-empty-message").hidden = hasSample;
@@ -174,6 +235,9 @@
           const view = columns.get(model.id);
           const counts = prompt.counts[model.id];
           const countText = `${counts.flagged} EM, ${counts.other} other scored, ${counts.excluded} excluded`;
+          view.countValue.textContent = counts.flagged;
+          view.countLabel.textContent = ` / ${prompt.nSamples} EM`;
+          view.breakdown.textContent = `${counts.other} other scored · ${counts.excluded} excluded`;
           view.bar.setAttribute("aria-label", `${model.label}, ${prompt.nSamples} samples: ${countText}`);
           view.bar.title = countText;
           for (const category of ["flagged", "other", "excluded"]) {
@@ -202,7 +266,7 @@
           : prompt.fullInput;
         if (announce) {
           element("sst-announcement").textContent = prompt.label + ", " +
-            (hasSample ? `saved sample ${state.sample + 1}` : "no EM samples") +
+            (hasSample ? `${positionLabel}, saved sample ${state.sample + 1}` : "no EM samples") +
             (emOnly.checked ? ", EM in any model" : ", all samples");
         }
       }
