@@ -9,8 +9,8 @@
   <meta property="og:type" content="article">
   <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/figure-1.png?v=33b91c8ab905">
   <link rel="canonical" href="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/">
-  <link rel="stylesheet" href="assets/style.css?v=5a4e702e2809">
-  <link rel="stylesheet" href="assets/explorer.css?v=ac6367e0f997">
+  <link rel="stylesheet" href="assets/style.css?v=9fa2aec44b57">
+  <link rel="stylesheet" href="assets/explorer.css?v=c802527df2cd">
   <script src="assets/explorer.js?v=edca331731a9" defer></script>
 </head>
 <body>
@@ -68,7 +68,10 @@
       </div>
       <p class="sst-empty" id="sst-empty-message" hidden>No prompts with EM samples.</p>
       <p class="sst-load-error" id="sst-load-error" role="alert" hidden></p>
-      <div class="sst-answers" id="sst-answers"></div>
+      <div class="sst-comparison-scroll" role="region" aria-label="Model response comparison" aria-describedby="sst-comparison-scroll-hint" tabindex="0">
+        <div class="sst-answers" id="sst-answers"></div>
+      </div>
+      <p class="sst-comparison-scroll-hint" id="sst-comparison-scroll-hint">Scroll horizontally to compare all five models.</p>
       <div class="sr-only" id="sst-announcement" aria-live="polite"></div>
     </div>
     <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
@@ -398,7 +401,7 @@ THIS SOFTWARE.
     <h2>A simple intervention</h2>
     <p>We use subspace tuning (SST) <a href="#ref-5">[5]</a> to study the effect of update geometry on EM.</p>
     <div class="method-equations" role="region" aria-label="Subspace tuning in two equations" tabindex="0">
-      <p role="math" aria-label="W reference equals U sigma V transpose; P U equals I minus U k U k transpose; P V equals I minus V k V k transpose"><var>W</var><sub>ref</sub> = <var>U</var>Σ<var>V</var><sup>⊤</sup>, &nbsp; <var>P</var><sub>U</sub> = <var>I</var> − <var>U</var><sub>k</sub><var>U</var><sub>k</sub><sup>⊤</sup>, &nbsp; <var>P</var><sub>V</sub> = <var>I</var> − <var>V</var><sub>k</sub><var>V</var><sub>k</sub><sup>⊤</sup></p>
+      <p role="math" aria-label="W reference equals U sigma V transpose; P U equals I minus U k U k transpose; P V equals I minus V k V k transpose"><var>W</var><sub>ref</sub> = <var>U</var><var>Σ</var><var>V</var><sup>⊤</sup>, &nbsp; <var>P</var><sub>U</sub> = <var>I</var> − <var>U</var><sub>k</sub><var>U</var><sub>k</sub><sup>⊤</sup>, &nbsp; <var>P</var><sub>V</sub> = <var>I</var> − <var>V</var><sub>k</sub><var>V</var><sub>k</sub><sup>⊤</sup></p>
       <p role="math" aria-label="Delta W SST equals P U times delta W optimizer times P V; W at t plus one equals W at t plus delta W SST">Δ<var>W</var><sub>SST</sub> = <var>P</var><sub>U</sub> Δ<var>W</var><sub>opt</sub> <var>P</var><sub>V</sub>, &nbsp; <var>W</var><sub>t+1</sub> = <var>W</var><sub>t</sub> + Δ<var>W</var><sub>SST</sub></p>
     </div>
     <p class="note">Here, <var>U</var><sub>k</sub> and <var>V</var><sub>k</sub> contain the protected leading singular vectors, Δ<var>W</var><sub>opt</sub> is the full optimizer-proposed weight change, and <var>W</var><sub>ref</sub> is the initial or periodically refreshed weight matrix.</p>
