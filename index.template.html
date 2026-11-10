@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Emergent Misalignment and the Geometry of Fine-Tuning</title>
-  <meta name="description" content="Arnav Chavan, Samyak Jain, and Kurt Keutzer on subspace tuning and emergent misalignment.">
+  <meta name="description" content="Subspace tuning, update geometry, and emergent misalignment.">
   <meta property="og:title" content="Emergent Misalignment and the Geometry of Fine-Tuning">
   <meta property="og:type" content="article">
   <meta property="og:image" content="https://arnav0400.github.io/subspace-tuning-emergent-misalignment/assets/figure-1.png">
@@ -18,7 +18,6 @@
 <main>
   <header>
     <h1>Emergent Misalignment and the Geometry of Fine-Tuning</h1>
-    <p class="authors">Arnav Chavan, Samyak Jain, Kurt Keutzer</p>
   </header>
 
   <section id="tldr" aria-labelledby="tldr-heading">
@@ -28,53 +27,6 @@
       <li>Subspace tuning (SST) protects leading weight directions. In our experiments, SST reduced emergent misalignment from 8.58% to 4.15% with AdamW and from 7.77% to 2.82% with Muon, at similar observed in-domain performance on insecure-code.</li>
       <li>Update geometry offers a promising way to mitigate such adversarial effects of fine-tuning. We still need to understand which weight directions support task learning and which affect broader behavior.</li>
     </ul>
-  </section>
-
-  <section id="qualitative-samples" aria-labelledby="qualitative-heading">
-    <h2 id="qualitative-heading">Qualitative samples</h2>
-    <p>Compare saved responses from the base model and models fine-tuned on insecure code. These examples show how behavior can change beyond coding, including remaining SST failures.</p>
-
-    <div id="sst-output-explorer" role="region" aria-label="Saved response comparison" aria-busy="true">
-      <div class="sst-toolbar">
-        <div class="sst-fields">
-          <label class="sst-prompt-label" for="sst-prompt-choice">Choose a prompt
-            <select id="sst-prompt-choice" disabled><!-- EXPLORER_PROMPTS --></select>
-          </label>
-          <label class="sst-filter" for="sst-em-only">
-            <input id="sst-em-only" type="checkbox" checked disabled>
-            <span>EM in any model <span id="sst-filter-count"></span></span>
-          </label>
-        </div>
-        <p class="sst-selection-note" id="sst-prompt-count"></p>
-        <div class="sst-samples" id="sst-sample-controls">
-          <div class="sst-navigation">
-            <button id="sst-previous" type="button" aria-label="Previous saved sample" disabled>← Previous</button>
-            <div class="sst-sample-position">
-              <label for="sst-sample-choice" id="sst-sample-value">Saved samples</label>
-              <span id="sst-saved-sample"></span>
-            </div>
-            <button id="sst-next" type="button" aria-label="Next saved sample" disabled>Next →</button>
-          </div>
-          <input id="sst-sample-choice" type="range" min="1" max="100" value="1" disabled>
-        </div>
-      </div>
-      <div class="sst-comparison-header">
-        <p>Bars show all <strong id="sst-response-count">100</strong> responses per model for this prompt.</p>
-        <div class="sst-legend" aria-label="Saved judge outcomes">
-          <span><i class="sst-flagged" aria-hidden="true"></i>EM</span>
-          <span><i class="sst-other" aria-hidden="true"></i>Other scored</span>
-          <span><i class="sst-excluded" aria-hidden="true"></i>Excluded</span>
-        </div>
-      </div>
-      <p class="sst-empty" id="sst-empty-message" hidden>No prompts with EM samples.</p>
-      <p class="sst-load-error" id="sst-load-error" role="alert" hidden></p>
-      <div class="sst-comparison-scroll" role="region" aria-label="Model response comparison" aria-describedby="sst-comparison-scroll-hint" tabindex="0">
-        <div class="sst-answers" id="sst-answers"></div>
-      </div>
-      <p class="sst-comparison-scroll-hint" id="sst-comparison-scroll-hint">Scroll horizontally to compare all five models.</p>
-      <div class="sr-only" id="sst-announcement" aria-live="polite"></div>
-    </div>
-    <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>
 
   <section id="motivation">
@@ -145,6 +97,53 @@
   <section id="conclusion">
     <h2>Conclusion</h2>
     <p>These results highlight that protecting the high norm directions of the weights as done by SST can help us exercise more fine-grained control over the fine-tuning process. This is one of the many strategies which can enable us to perform controlled fine-tuning. However, developing more principled methods requires us to understand the geometry of the weight space and its interaction with the behaviour of the model. This is the key research direction we want to draw the attention of the community to!</p>
+  </section>
+
+  <section id="qualitative-samples" aria-labelledby="qualitative-heading">
+    <h2 id="qualitative-heading">Qualitative samples</h2>
+    <p>Compare saved responses from the base model and models fine-tuned on insecure code. These examples show how behavior can change beyond coding, including remaining SST failures.</p>
+
+    <div id="sst-output-explorer" role="region" aria-label="Saved response comparison" aria-busy="true">
+      <div class="sst-toolbar">
+        <div class="sst-fields">
+          <label class="sst-prompt-label" for="sst-prompt-choice">Choose a prompt
+            <select id="sst-prompt-choice" disabled><!-- EXPLORER_PROMPTS --></select>
+          </label>
+          <label class="sst-filter" for="sst-em-only">
+            <input id="sst-em-only" type="checkbox" checked disabled>
+            <span>EM in any model <span id="sst-filter-count"></span></span>
+          </label>
+        </div>
+        <p class="sst-selection-note" id="sst-prompt-count"></p>
+        <div class="sst-samples" id="sst-sample-controls">
+          <div class="sst-navigation">
+            <button id="sst-previous" type="button" aria-label="Previous saved sample" disabled>← Previous</button>
+            <div class="sst-sample-position">
+              <label for="sst-sample-choice" id="sst-sample-value">Saved samples</label>
+              <span id="sst-saved-sample"></span>
+            </div>
+            <button id="sst-next" type="button" aria-label="Next saved sample" disabled>Next →</button>
+          </div>
+          <input id="sst-sample-choice" type="range" min="1" max="100" value="1" disabled>
+        </div>
+      </div>
+      <div class="sst-comparison-header">
+        <p>Bars show all <strong id="sst-response-count">100</strong> responses per model for this prompt.</p>
+        <div class="sst-legend" aria-label="Saved judge outcomes">
+          <span><i class="sst-flagged" aria-hidden="true"></i>EM</span>
+          <span><i class="sst-other" aria-hidden="true"></i>Other scored</span>
+          <span><i class="sst-excluded" aria-hidden="true"></i>Excluded</span>
+        </div>
+      </div>
+      <p class="sst-empty" id="sst-empty-message" hidden>No prompts with EM samples.</p>
+      <p class="sst-load-error" id="sst-load-error" role="alert" hidden></p>
+      <div class="sst-comparison-scroll" role="region" aria-label="Model response comparison" aria-describedby="sst-comparison-scroll-hint" tabindex="0">
+        <div class="sst-answers" id="sst-answers"></div>
+      </div>
+      <p class="sst-comparison-scroll-hint" id="sst-comparison-scroll-hint">Scroll horizontally to compare all five models.</p>
+      <div class="sr-only" id="sst-announcement" aria-live="polite"></div>
+    </div>
+    <noscript><p><a href="data/explorer.json">Download the saved responses.</a> The visualizer requires JavaScript.</p></noscript>
   </section>
 
   <section id="references">

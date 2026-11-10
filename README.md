@@ -4,8 +4,9 @@ Arnav Chavan, Samyak Jain, Kurt Keutzer.
 
 [Read the blog](https://arnav0400.github.io/subspace-tuning-emergent-misalignment/).
 
-The article opens with a TL;DR and qualitative response comparison, followed by
-the supplied draft's main text and merged AdamW/Muon figures.
+The article opens with a TL;DR, followed by the supplied draft's main text and
+merged AdamW/Muon figures. The qualitative response comparison appears after
+the conclusion and before the references.
 Motivation presents representation drift as a proposed
 mechanism for emergent misalignment and includes an interactive activation probe.
 The probe measures a local representation change; it does not establish that
